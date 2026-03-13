@@ -21,4 +21,5 @@ RUN chown -R appuser:appuser /app
 USER appuser
 
 # Default: run API (override CMD for worker/beat)
-CMD ["sh", "-c", "alembic upgrade head && uvicorn animantis.api.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2"]
+# NOTE: alembic upgrade head will be added back when migrations are configured
+CMD ["sh", "-c", "uvicorn animantis.api.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2"]
