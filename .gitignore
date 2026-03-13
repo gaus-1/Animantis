@@ -68,6 +68,11 @@ logs/
 htmlcov/
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
 
 # Docker
 docker-compose.override.yml
