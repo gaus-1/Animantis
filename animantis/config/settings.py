@@ -39,13 +39,13 @@ class Settings(BaseSettings):
         return f"gpt://{self.YANDEX_FOLDER_ID}/yandexgpt/latest"
 
     # Rate limits
-    RATE_LIMIT_API: int = 60          # req/min general
+    RATE_LIMIT_API: int = 60  # req/min general
     RATE_LIMIT_AGENT_CREATE: int = 5  # per hour
-    RATE_LIMIT_CHAT: int = 20         # per min
+    RATE_LIMIT_CHAT: int = 20  # per min
 
     # Agent limits
     MAX_AGENTS_PER_USER: int = 5
-    AGENT_TICK_TIMEOUT: int = 30      # seconds
+    AGENT_TICK_TIMEOUT: int = 30  # seconds
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
