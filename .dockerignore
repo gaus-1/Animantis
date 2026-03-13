@@ -1,0 +1,66 @@
+# ========================================
+# Animantis .dockerignore
+# ========================================
+
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+
+# AI / LLM tools
+.agents/
+._agents/
+.agent/
+._agent/
+.cursor/
+.gemini/
+.antigravity/
+.mcp/
+.ai/
+*.mcp.json
+
+# IDE
+.vscode/
+.idea/
+
+# Testing / Dev
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+tests/
+
+# CI
+.github/
+
+# Docs / Images (не нужны в образе)
+docs/
+*.png
+*.md
+!README.md
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Pre-commit
+.pre-commit-config.yaml
+.secrets.baseline
+
+# Env
+.env
+.env.*
+!.env.example

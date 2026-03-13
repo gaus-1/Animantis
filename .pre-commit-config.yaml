@@ -1,15 +1,47 @@
 # ========================================
-# Animantis Pre-commit Hooks
+# Animantis — Pre-commit Hooks
 # ========================================
+#
+# Установка: pre-commit install
+# Ручной запуск: pre-commit run --all-files
+#
 repos:
+  # ── Ruff (lint + format) ────────────────────────────
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.6
     hooks:
       - id: ruff
-        args: [--fix]
+        args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
 
+  # ── Стандартные хуки (trailing whitespace, EOF, YAML) ──
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: check-merge-conflict
+      - id: debug-statements
+
+  # ── Detect Secrets (защита от коммита ключей) ───────
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
       - id: detect-secrets
+
+  # ── Mypy (type checking) ───────────────────────────
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.14.1
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - pydantic>=2.9.0
+          - pydantic-settings>=2.6.0
+          - fastapi>=0.115.0
+          - sqlalchemy>=2.0.0
+        args: [--ignore-missing-imports, animantis/]
+        pass_filenames: false
