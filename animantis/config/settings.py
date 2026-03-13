@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     # App
     APP_ENV: str = "development"
     DEBUG: bool = False
-    SECRET_KEY: str = "change-me"
+    SECRET_KEY: str = "change-me"  # noqa: S105
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/railway"

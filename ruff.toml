@@ -1,8 +1,10 @@
-[tool.ruff]
+# ========================================
+# Animantis — Ruff Linter Configuration
+# ========================================
 target-version = "py311"
 line-length = 100
 
-[tool.ruff.lint]
+[lint]
 select = [
     "E",    # pycodestyle errors
     "W",    # pycodestyle warnings
@@ -20,5 +22,5 @@ select = [
 ]
 ignore = ["S101"]  # allow assert in tests
 
-[tool.ruff.lint.isort]
+[lint.isort]
 known-first-party = ["animantis"]
