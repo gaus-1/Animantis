@@ -17,7 +17,7 @@ from animantis.db.base import Base
 config = context.config
 
 # Set the database URL from our settings (not from alembic.ini)
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("+asyncpg", ""))
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # Logging
 if config.config_file_name is not None:
