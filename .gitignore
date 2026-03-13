@@ -1,0 +1,73 @@
+# ========================================
+# Animantis .gitignore
+# ========================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# Environment / Secrets
+.env
+.env.*
+!.env.example
+
+# AI / LLM tools — НЕ КОММИТИТЬ
+.agents/
+._agents/
+.agent/
+._agent/
+.cursor/
+.gemini/
+.antigravity/
+.mcp/
+.ai/
+*.mcp.json
+.cursor-tuning
+.cursorignore
+.cursorindexignore
+.antigravityignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/.cache/
+.parcel-cache/
+
+# Database
+*.sqlite3
+*.db
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Docker
+docker-compose.override.yml
