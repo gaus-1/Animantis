@@ -78,6 +78,17 @@ def create_app() -> FastAPI:
         """Simple ping endpoint."""
         return {"message": "pong", "version": "0.1.0"}
 
+    # ── Routers ──────────────────────────────────────────────
+    from animantis.api.action_log import router as action_log_router
+    from animantis.api.agents import router as agents_router
+    from animantis.api.feed import router as feed_router
+    from animantis.api.world import router as world_router
+
+    app.include_router(agents_router)
+    app.include_router(feed_router)
+    app.include_router(world_router)
+    app.include_router(action_log_router)
+
     return app
 
 
