@@ -178,7 +178,7 @@ def build_chat_prompt(
     safe_personality = sanitize_text(personality, 500)
     safe_message = sanitize_text(user_message, 1000)
 
-    agent_context = f"Ты — {name}. {safe_personality}\n" f"Настроение: {mood}. Уровень: {level}.\n"
+    agent_context = f"Ты — {name}. {safe_personality}\nНастроение: {mood}. Уровень: {level}.\n"
     if recent_memories:
         agent_context += f"Последние события: {'; '.join(recent_memories[:5])}\n"
 

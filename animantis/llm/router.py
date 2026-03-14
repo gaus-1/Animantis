@@ -185,7 +185,7 @@ CACHE_TTL = 600  # 10 minutes
 
 def _make_cache_hash(key: str) -> str:
     """Create short hash for cache key."""
-    return f"llm:cache:{hashlib.md5(key.encode()).hexdigest()[:16]}"  # noqa: S324
+    return f"llm:cache:{hashlib.md5(key.encode(), usedforsecurity=False).hexdigest()[:16]}"
 
 
 async def _get_cache(key: str) -> LLMResponse | None:

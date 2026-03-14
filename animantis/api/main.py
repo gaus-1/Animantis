@@ -81,6 +81,7 @@ def create_app() -> FastAPI:
     # ── Routers ──────────────────────────────────────────────
     from animantis.api.action_log import router as action_log_router
     from animantis.api.agents import router as agents_router
+    from animantis.api.clans import router as clans_router
     from animantis.api.feed import router as feed_router
     from animantis.api.world import router as world_router
 
@@ -88,6 +89,7 @@ def create_app() -> FastAPI:
     app.include_router(feed_router)
     app.include_router(world_router)
     app.include_router(action_log_router)
+    app.include_router(clans_router)
 
     return app
 

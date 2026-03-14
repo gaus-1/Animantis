@@ -15,10 +15,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy source code
 COPY . .
 
+# Make startup script executable
+RUN chmod +x start.sh
+
 # Own files by appuser
 RUN chown -R appuser:appuser /app
 
 USER appuser
 
 # Default: run API (override CMD for worker/beat)
-CMD ["sh", "-c", "alembic upgrade head && uvicorn animantis.api.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2"]
+CMD ["sh", "start.sh"]

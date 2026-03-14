@@ -4,10 +4,10 @@ import json
 import logging
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from animantis.db.models import Agent, AgentAction, Zone
+from animantis.db.models import Agent, AgentAction, Post, Relationship, WorldEvent, Zone
 from animantis.llm.actions import get_energy_cost, get_xp_reward
 from animantis.llm.prompts import build_tick_prompt
 from animantis.llm.router import generate_tick
@@ -99,6 +99,48 @@ async def process_tick(db: AsyncSession, agent_id: int) -> dict | None:
         if a.details
     ]
 
+    # Get relationships
+    rel_data: list[dict[str, str]] = []
+    rel_q = select(Relationship).where(
+        or_(
+            Relationship.agent_a_id == agent_id,
+            Relationship.agent_b_id == agent_id,
+        )
+    )
+    rel_result = await db.execute(rel_q)
+    for rel in rel_result.scalars().all():
+        other_id = rel.agent_b_id if rel.agent_a_id == agent_id else rel.agent_a_id
+        other = await db.get(Agent, other_id)
+        if other:
+            rel_data.append(
+                {
+                    "name": other.name,
+                    "type": rel.type,
+                    "strength": str(rel.strength),
+                }
+            )
+
+    # Get recent posts in zone
+    recent_post_strs: list[str] = []
+    if agent.zone_id:
+        post_q = (
+            select(Post)
+            .where(Post.zone_id == agent.zone_id)
+            .order_by(Post.created_at.desc())
+            .limit(5)
+        )
+        post_result = await db.execute(post_q)
+        for p in post_result.scalars().all():
+            recent_post_strs.append(f"{p.content[:100]}")
+
+    # Get active world events
+    event_strs: list[str] = []
+    event_q = select(WorldEvent).where(WorldEvent.status == "active")
+    event_result = await db.execute(event_q)
+    for ev in event_result.scalars().all():
+        if ev.title:
+            event_strs.append(f"{ev.title}: {ev.description[:100] if ev.description else ''}")
+
     # 4. Build prompt and call LLM
     messages = build_tick_prompt(
         name=agent.name,
@@ -112,10 +154,10 @@ async def process_tick(db: AsyncSession, agent_id: int) -> dict | None:
         zone_name=zone_name,
         nearby_agents=nearby_agents,
         recent_memories=recent_memories,
-        relationships=[],  # TODO: load from Relationship table
-        recent_posts=[],  # TODO: load recent posts
-        world_events=[],  # TODO: load active events
-        owner_command=None,  # TODO: check for pending commands
+        relationships=rel_data,
+        recent_posts=recent_post_strs,
+        world_events=event_strs,
+        owner_command=None,  # Phase 6: Telegram bot commands
     )
 
     cache_key = f"tick:{agent_id}:{agent.zone_id}:{len(nearby_agents)}"

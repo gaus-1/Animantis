@@ -281,7 +281,7 @@ def downgrade() -> None:
     op.drop_table("comments")
     op.drop_table("posts")
     op.drop_table("relationships")
-    op.drop_foreign_key("fk_clans_leader_agent", "clans")
+    op.drop_constraint("fk_clans_leader_agent", "clans", type_="foreignkey")
     op.drop_table("agents")
     op.drop_table("zones")
     op.drop_table("clans")
