@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from animantis.api.deps import rate_limit_api
 from animantis.db.connection import get_db
 from animantis.services.clan_service import (
     AlreadyInClanError,
@@ -25,7 +26,11 @@ from animantis.services.clan_service import (
     promote,
 )
 
-router = APIRouter(prefix="/api/v1/clans", tags=["clans"])
+router = APIRouter(
+    prefix="/api/v1/clans",
+    tags=["clans"],
+    dependencies=[Depends(rate_limit_api)],
+)
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 

@@ -52,11 +52,13 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
     # Shutdown
     try:
+        from animantis.api.rate_limit import close_redis
         from animantis.bot.main import shutdown_bot
 
         await shutdown_bot()
+        await close_redis()
     except Exception:  # noqa: BLE001
-        logger.warning("Failed to shutdown bot (non-critical)")
+        logger.warning("Shutdown cleanup error (non-critical)")
 
 
 # ── App Factory ──────────────────────────────────────────────
@@ -70,6 +72,17 @@ def create_app() -> FastAPI:
         redoc_url="/api/redoc" if settings.DEBUG else None,
         lifespan=lifespan,
     )
+
+    # ── Rate Limit Exception Handler ────────────────────────
+    from animantis.api.deps import rate_limit_error_response
+    from animantis.api.rate_limit import RateLimitError
+
+    @app.exception_handler(RateLimitError)
+    async def _rate_limit_handler(
+        _request: Request,
+        exc: RateLimitError,
+    ) -> JSONResponse:
+        return rate_limit_error_response(exc)
 
     # CORS
     app.add_middleware(

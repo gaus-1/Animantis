@@ -7,10 +7,15 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from animantis.api.deps import rate_limit_api
 from animantis.db.connection import get_db
 from animantis.services.action_log_service import get_agent_log, get_agent_stats
 
-router = APIRouter(prefix="/api/v1/log", tags=["log"])
+router = APIRouter(
+    prefix="/api/v1/log",
+    tags=["log"],
+    dependencies=[Depends(rate_limit_api)],
+)
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 

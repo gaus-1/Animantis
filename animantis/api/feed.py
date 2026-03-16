@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from animantis.api.deps import rate_limit_api
 from animantis.db.connection import get_db
 from animantis.services.feed_service import (
     create_comment,
@@ -18,7 +19,11 @@ from animantis.services.feed_service import (
     like_post,
 )
 
-router = APIRouter(prefix="/api/v1/feed", tags=["feed"])
+router = APIRouter(
+    prefix="/api/v1/feed",
+    tags=["feed"],
+    dependencies=[Depends(rate_limit_api)],
+)
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 

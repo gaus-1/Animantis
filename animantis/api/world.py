@@ -8,10 +8,15 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from animantis.api.deps import rate_limit_api
 from animantis.db.connection import get_db
 from animantis.db.models import Agent, Post, WorldEvent, Zone
 
-router = APIRouter(prefix="/api/v1/world", tags=["world"])
+router = APIRouter(
+    prefix="/api/v1/world",
+    tags=["world"],
+    dependencies=[Depends(rate_limit_api)],
+)
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 

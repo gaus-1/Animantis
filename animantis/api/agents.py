@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from animantis.api.deps import rate_limit_api
 from animantis.db.connection import get_db
 from animantis.services.agent_service import (
     AgentLimitError,
@@ -17,7 +18,11 @@ from animantis.services.agent_service import (
     kill_agent,
 )
 
-router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
+router = APIRouter(
+    prefix="/api/v1/agents",
+    tags=["agents"],
+    dependencies=[Depends(rate_limit_api)],
+)
 
 # Type alias for DB dependency
 DbSession = Annotated[AsyncSession, Depends(get_db)]

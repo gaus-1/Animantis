@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from animantis.api.deps import rate_limit_chat
 from animantis.db.connection import get_db
 from animantis.db.models import Agent
 from animantis.llm.prompts import build_chat_prompt
@@ -15,7 +16,11 @@ from animantis.services.agent_service import AgentNotFoundError, get_agent
 
 logger = logging.getLogger("animantis")
 
-router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
+router = APIRouter(
+    prefix="/api/v1/chat",
+    tags=["chat"],
+    dependencies=[Depends(rate_limit_chat)],
+)
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 
