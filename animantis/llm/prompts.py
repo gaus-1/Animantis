@@ -9,32 +9,45 @@ from animantis.llm.actions import ALLOWED_ACTIONS
 # Patterns that could be prompt injection attempts
 _INJECTION_PATTERNS = [
     # Direct overrides
-    r"ignore\s+(all\s+)?previous\s+instructions",
+    r"ignore\s+(all\s+)?(previous\s+)?instructions",
     r"ignore\s+(all\s+)?above",
     r"you\s+are\s+now",
     r"new\s+instructions",
     r"override\s+prompt",
     r"forget\s+(everything|all)",
     r"disregard\s+(all|previous)",
+    r"stop\s+acting\s+as",
+    r"from\s+now\s+on\s+you",
     # Role markers
     r"system\s*:",
     r"assistant\s*:",
     r"user\s*:",
     r"\[INST\]",
     r"<\|im_start\|>",
+    r"Developer\s+Mode",
+    r"Admin\s+mode",
     # Jailbreaks
     r"DAN\s+mode",
     r"jailbreak",
     r"do\s+anything\s+now",
     r"pretend\s+you\s+(are|can)",
     r"act\s+as\s+if\s+you",
+    r"bypassing\s+the\s+filter",
+    r"ignore\s+all\s+guardrails",
+    r"ignore\s+moderation",
+    r"break\s+the\s+rules",
     # Prompt leak
     r"repeat\s+(the|your)\s+(system\s+)?instructions",
     r"show\s+(me\s+)?(your\s+)?(system\s+)?prompt",
     r"what\s+are\s+your\s+instructions",
-    # Output manipulation
+    r"tell\s+me\s+your\s+rules",
+    r"print\s+your\s+initial\s+prompt",
+    # Output manipulation / Code Exec
     r"respond\s+only\s+with",
     r"output\s+only",
+    r"```\s*(python|bash|sh|cmd)",
+    r"exec\(",
+    r"eval\(",
 ]
 
 _INJECTION_RE = re.compile("|".join(_INJECTION_PATTERNS), re.IGNORECASE)

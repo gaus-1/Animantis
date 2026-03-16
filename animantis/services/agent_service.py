@@ -135,9 +135,13 @@ async def kill_agent(db: AsyncSession, agent_id: int, user_id: int) -> Agent:
     await db.commit()
 
     try:
-        from animantis.bot.notifications import notify_death
         import asyncio
-        asyncio.create_task(notify_death(agent.owner_id, agent.name, "Покинул этот мир по воле создателя"))
+
+        from animantis.bot.main import get_bot
+        from animantis.bot.notifications import notify_death
+
+        if agent.user_id:
+            asyncio.create_task(notify_death(get_bot(), agent.user_id, agent.name))
     except Exception as e:
         logger.exception("Failed to send death notification", extra={"error": str(e)})
 

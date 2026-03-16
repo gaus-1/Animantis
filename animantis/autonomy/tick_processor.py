@@ -61,16 +61,21 @@ async def process_tick(db: AsyncSession, agent_id: int) -> dict | None:
         agent.last_tick_at = datetime.now(tz=UTC)
         agent.total_ticks += 1
         await db.commit()
-        
+
         # Notify owner of low energy sleep state
         try:
-            from animantis.bot.notifications import notify_low_energy
             import asyncio
+
+            from animantis.bot.main import get_bot
+            from animantis.bot.notifications import notify_low_energy
+
             if agent.user_id:
-                asyncio.create_task(notify_low_energy(agent.user_id, agent.name))
+                asyncio.create_task(
+                    notify_low_energy(get_bot(), agent.user_id, agent.name, agent.energy)
+                )
         except Exception as e:
             logger.exception("Failed to send low energy notification", extra={"error": str(e)})
-            
+
         return {"action": "auto_rest", "agent_id": agent_id}
 
     # 3. Gather context
@@ -172,16 +177,20 @@ async def process_tick(db: AsyncSession, agent_id: int) -> dict | None:
 
     agent.energy = max(0, min(100, agent.energy + energy_delta))
     agent.xp += xp_delta
-    
+
     # Check for level up
     old_level = agent.level
     agent.level = _calculate_level(agent.xp)
-    
+
     if agent.level > old_level:
-        from animantis.bot.notifications import notify_level_up
         # Trigger notification async safely without blocking tick
         import asyncio
-        asyncio.create_task(notify_level_up(agent.owner_id, agent.name, agent.level))
+
+        from animantis.bot.main import get_bot
+        from animantis.bot.notifications import notify_level_up
+
+        if agent.user_id:
+            asyncio.create_task(notify_level_up(get_bot(), agent.user_id, agent.name, agent.level))
 
     agent.total_ticks += 1
     agent.last_tick_at = datetime.now(tz=UTC)
