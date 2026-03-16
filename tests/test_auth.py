@@ -55,6 +55,18 @@ def _build_init_data(
     return urlencode(params, quote_via=quote)
 
 
+@pytest.fixture(autouse=True)
+def _patch_bot_token(monkeypatch):
+    """Patch settings.TELEGRAM_BOT_TOKEN for auth tests.
+
+    Pydantic Settings is cached at import time and monkeypatch on
+    os.environ alone won't update it.
+    """
+    from animantis.config.settings import settings
+
+    monkeypatch.setattr(settings, "TELEGRAM_BOT_TOKEN", "test-token")
+
+
 @pytest.mark.api
 class TestValidateInitData:
     """Test validate_init_data function directly."""

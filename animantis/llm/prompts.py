@@ -8,15 +8,33 @@ from animantis.llm.actions import ALLOWED_ACTIONS
 
 # Patterns that could be prompt injection attempts
 _INJECTION_PATTERNS = [
+    # Direct overrides
     r"ignore\s+(all\s+)?previous\s+instructions",
     r"ignore\s+(all\s+)?above",
     r"you\s+are\s+now",
     r"new\s+instructions",
-    r"system\s*:",
-    r"assistant\s*:",
     r"override\s+prompt",
     r"forget\s+(everything|all)",
     r"disregard\s+(all|previous)",
+    # Role markers
+    r"system\s*:",
+    r"assistant\s*:",
+    r"user\s*:",
+    r"\[INST\]",
+    r"<\|im_start\|>",
+    # Jailbreaks
+    r"DAN\s+mode",
+    r"jailbreak",
+    r"do\s+anything\s+now",
+    r"pretend\s+you\s+(are|can)",
+    r"act\s+as\s+if\s+you",
+    # Prompt leak
+    r"repeat\s+(the|your)\s+(system\s+)?instructions",
+    r"show\s+(me\s+)?(your\s+)?(system\s+)?prompt",
+    r"what\s+are\s+your\s+instructions",
+    # Output manipulation
+    r"respond\s+only\s+with",
+    r"output\s+only",
 ]
 
 _INJECTION_RE = re.compile("|".join(_INJECTION_PATTERNS), re.IGNORECASE)
