@@ -35,8 +35,14 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Network error' }));
-      throw new ApiError(response.status, error.detail ?? 'Unknown error');
+      const data = await response.json().catch(() => ({ detail: 'Network error' }));
+      let message = 'Unknown error';
+      if (typeof data.detail === 'string') {
+        message = data.detail;
+      } else if (Array.isArray(data.detail)) {
+        message = data.detail.map((e: any) => e.msg).join(', ');
+      }
+      throw new ApiError(response.status, message);
     }
 
     return response.json() as Promise<T>;

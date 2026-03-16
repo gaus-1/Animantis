@@ -19,7 +19,15 @@ export function AgentCreate() {
     e.preventDefault();
 
     try {
-      const agent = await createAgent.mutateAsync(form);
+      // Get user_id from Telegram WebApp, default to 1 for out-of-tg local testing
+      const tgUserId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id || 1;
+
+      const payload = {
+        ...form,
+        user_id: tgUserId,
+      };
+
+      const agent = await createAgent.mutateAsync(payload);
       navigate(`/agent/${agent.id}`);
     } catch {
       // Error handled via createAgent.error
