@@ -13,6 +13,7 @@ from animantis.db.models import Agent
 from animantis.llm.prompts import build_chat_prompt
 from animantis.llm.router import LLMError, generate_chat
 from animantis.services.agent_service import AgentNotFoundError, get_agent
+from animantis.services.memory_service import get_chat_context
 
 logger = logging.getLogger("animantis")
 
@@ -73,14 +74,17 @@ async def chat_with_agent(
     if not agent.is_alive:
         raise HTTPException(status_code=400, detail="Cannot chat with a dead agent")
 
-    # Build prompt (no chat history for now — stateless)
+    # Get recent memories for context
+    memories = await get_chat_context(db, agent_id, hours=24, limit=15)
+
+    # Build prompt with memories
     messages = build_chat_prompt(
         name=agent.name,
         personality=agent.personality,
         mood=agent.mood,
         level=agent.level,
-        recent_memories=[],  # TODO: load from agent_actions
-        chat_history=[],  # TODO: persistent chat history
+        recent_memories=memories,
+        chat_history=[],
         user_message=data.message,
     )
 

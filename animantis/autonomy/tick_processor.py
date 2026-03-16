@@ -11,6 +11,7 @@ from animantis.db.models import Agent, AgentAction, Post, Relationship, WorldEve
 from animantis.llm.actions import get_energy_cost, get_xp_reward
 from animantis.llm.prompts import build_tick_prompt
 from animantis.llm.router import generate_tick
+from animantis.services.memory_service import get_recent_memories
 
 logger = logging.getLogger("animantis")
 
@@ -84,20 +85,8 @@ async def process_tick(db: AsyncSession, agent_id: int) -> dict | None:
         result = await db.execute(nearby_q)
         nearby_agents = list(result.scalars().all())
 
-    # Get recent actions as memories
-    recent_q = (
-        select(AgentAction)
-        .where(AgentAction.agent_id == agent_id)
-        .order_by(AgentAction.created_at.desc())
-        .limit(10)
-    )
-    actions_result = await db.execute(recent_q)
-    recent_actions: list[AgentAction] = list(actions_result.scalars().all())
-    recent_memories = [
-        f"{a.action_type}: {json.dumps(a.details, ensure_ascii=False)[:100]}"
-        for a in recent_actions
-        if a.details
-    ]
+    # Get recent actions as memories (via memory service)
+    recent_memories = await get_recent_memories(db, agent_id, limit=10)
 
     # Get relationships
     rel_data: list[dict[str, str]] = []
