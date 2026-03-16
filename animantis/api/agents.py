@@ -36,6 +36,13 @@ class AgentCreate(BaseModel):
     avatar_type: str | None = Field(default=None, max_length=50)
 
 
+class AgentCommand(BaseModel):
+    """Command from owner to agent."""
+
+    user_id: int
+    command: str = Field(min_length=1, max_length=300)
+
+
 class AgentResponse(BaseModel):
     """Agent data response."""
 
@@ -57,6 +64,15 @@ class AgentResponse(BaseModel):
     total_ticks: int
 
     model_config = {"from_attributes": True}
+
+
+class CommandResponse(BaseModel):
+    """Response after sending a command."""
+
+    agent_id: int
+    agent_name: str
+    command: str
+    status: str
 
 
 # ── Routes ───────────────────────────────────────────────────
@@ -106,3 +122,43 @@ async def kill_agent_route(agent_id: int, user_id: int, db: DbSession) -> AgentR
         raise HTTPException(status_code=404, detail=str(e)) from e
     except NotOwnerError as e:
         raise HTTPException(status_code=403, detail=str(e)) from e
+
+
+@router.post("/{agent_id}/command", response_model=CommandResponse)
+async def send_command_route(agent_id: int, data: AgentCommand, db: DbSession) -> CommandResponse:
+    """Send a command from owner to agent.
+
+    The command will be picked up by the tick processor on the next tick.
+    """
+    from animantis.db.models import AgentAction
+    from animantis.llm.prompts import sanitize_text
+
+    # Get agent
+    try:
+        agent = await get_agent(db, agent_id)
+    except AgentNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+    # Check ownership
+    if agent.user_id != data.user_id:
+        raise HTTPException(status_code=403, detail="Only the owner can command this agent")
+
+    if not agent.is_alive:
+        raise HTTPException(status_code=400, detail="Cannot command a dead agent")
+
+    # Sanitize and store command as action
+    safe_command = sanitize_text(data.command, 300)
+    action = AgentAction(
+        agent_id=agent_id,
+        action_type="owner_command",
+        details={"command": safe_command, "source": "api", "user_id": data.user_id},
+    )
+    db.add(action)
+    await db.commit()
+
+    return CommandResponse(
+        agent_id=agent.id,
+        agent_name=agent.name,
+        command=safe_command,
+        status="queued",
+    )

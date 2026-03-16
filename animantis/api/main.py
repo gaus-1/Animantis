@@ -1,12 +1,15 @@
 """Animantis API — FastAPI application."""
 
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.requests import Request
+from starlette.requests import Request as StarletteRequest
 from starlette.responses import Response
 
 from animantis.config.settings import settings
@@ -20,7 +23,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(
         self,
-        request: Request,
+        request: StarletteRequest,
         call_next: RequestResponseEndpoint,
     ) -> Response:
         response = await call_next(request)
@@ -33,6 +36,29 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
+# ── Lifespan ─────────────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Application lifespan — startup/shutdown."""
+    # Startup
+    try:
+        from animantis.bot.main import setup_webhook
+
+        await setup_webhook()
+    except Exception:  # noqa: BLE001
+        logger.warning("Failed to setup Telegram webhook (non-critical)")
+
+    yield
+
+    # Shutdown
+    try:
+        from animantis.bot.main import shutdown_bot
+
+        await shutdown_bot()
+    except Exception:  # noqa: BLE001
+        logger.warning("Failed to shutdown bot (non-critical)")
+
+
 # ── App Factory ──────────────────────────────────────────────
 def create_app() -> FastAPI:
     """Create and configure FastAPI application."""
@@ -42,6 +68,7 @@ def create_app() -> FastAPI:
         version="0.1.0",
         docs_url="/api/docs" if settings.DEBUG else None,
         redoc_url="/api/redoc" if settings.DEBUG else None,
+        lifespan=lifespan,
     )
 
     # CORS
@@ -66,8 +93,6 @@ def create_app() -> FastAPI:
     # Security Headers
     app.add_middleware(SecurityHeadersMiddleware)
 
-    # ── Routes ───────────────────────────────────────────────
-
     @app.get("/health")
     async def health_check() -> dict[str, str]:
         """Health check for Railway."""
@@ -78,9 +103,28 @@ def create_app() -> FastAPI:
         """Simple ping endpoint."""
         return {"message": "pong", "version": "0.1.0"}
 
+    # ── Telegram Webhook ─────────────────────────────────────
+
+    @app.post("/webhook")
+    async def telegram_webhook(request: Request) -> JSONResponse:
+        """Handle incoming Telegram updates via webhook."""
+        from aiogram.types import Update
+
+        from animantis.bot.main import get_bot, get_dispatcher
+
+        try:
+            data = await request.json()
+            update = Update.model_validate(data, context={"bot": get_bot()})
+            await get_dispatcher().feed_update(bot=get_bot(), update=update)
+        except Exception:  # noqa: BLE001
+            logger.exception("Error processing Telegram update")
+
+        return JSONResponse({"ok": True})
+
     # ── Routers ──────────────────────────────────────────────
     from animantis.api.action_log import router as action_log_router
     from animantis.api.agents import router as agents_router
+    from animantis.api.chat import router as chat_router
     from animantis.api.clans import router as clans_router
     from animantis.api.feed import router as feed_router
     from animantis.api.world import router as world_router
@@ -90,6 +134,7 @@ def create_app() -> FastAPI:
     app.include_router(world_router)
     app.include_router(action_log_router)
     app.include_router(clans_router)
+    app.include_router(chat_router)
 
     return app
 
