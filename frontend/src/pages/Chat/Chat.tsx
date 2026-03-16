@@ -1,8 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { api } from '@/api/client';
-import type { Agent, ChatResponse } from '@/api/types';
+import { useAgent, useChatMutation } from '@/hooks/useApi';
 
 import s from './Chat.module.css';
 
@@ -13,26 +12,17 @@ interface Message {
 
 export function Chat() {
   const { id } = useParams<{ id: string }>();
-  const [agent, setAgent] = useState<Agent | null>(null);
+  const { data: agent, isLoading: agentLoading } = useAgent(id);
+  const chatMutation = useChatMutation(id);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [agentLoading, setAgentLoading] = useState(true);
+  const [currentMood, setCurrentMood] = useState('neutral');
   const messagesRef = useRef<HTMLDivElement>(null);
 
+  // Sync mood from agent data
   useEffect(() => {
-    async function loadAgent() {
-      try {
-        const data = await api.get<Agent>(`/api/v1/agents/${id}`);
-        setAgent(data);
-      } catch {
-        // fail gracefully
-      } finally {
-        setAgentLoading(false);
-      }
-    }
-    void loadAgent();
-  }, [id]);
+    if (agent?.mood) setCurrentMood(agent.mood);
+  }, [agent?.mood]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -44,33 +34,24 @@ export function Chat() {
 
   async function handleSend(e: FormEvent) {
     e.preventDefault();
-    if (!input.trim() || loading) return;
+    if (!input.trim() || chatMutation.isPending) return;
 
     const userMsg = input.trim();
     setInput('');
     setMessages((prev) => [...prev, { role: 'user', text: userMsg }]);
-    setLoading(true);
 
     try {
-      const response = await api.post<ChatResponse>(
-        `/api/v1/chat/${id}`,
-        { message: userMsg },
-      );
+      const response = await chatMutation.mutateAsync(userMsg);
       setMessages((prev) => [
         ...prev,
         { role: 'agent', text: response.reply },
       ]);
-      // Update mood locally
-      if (agent) {
-        setAgent({ ...agent, mood: response.mood });
-      }
+      setCurrentMood(response.mood);
     } catch {
       setMessages((prev) => [
         ...prev,
         { role: 'agent', text: '⚠️ Ошибка связи с агентом...' },
       ]);
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -80,7 +61,6 @@ export function Chat() {
 
   return (
     <div className={s.chatPage}>
-      {/* Chat Header */}
       <div className={s.chatHeader}>
         <img
           src="/assets/agent-avatar.svg"
@@ -90,12 +70,11 @@ export function Chat() {
         <div>
           <div className={s.chatName}>{agent?.name ?? 'Агент'}</div>
           <div className={s.chatMood}>
-            Настроение: {agent?.mood ?? 'neutral'} · Lv.{agent?.level ?? 1}
+            Настроение: {currentMood} · Lv.{agent?.level ?? 1}
           </div>
         </div>
       </div>
 
-      {/* Messages */}
       <div className={s.messages} ref={messagesRef}>
         {messages.length === 0 && (
           <div className={s.typing}>
@@ -112,24 +91,25 @@ export function Chat() {
             {msg.text}
           </div>
         ))}
-        {loading && <div className={s.typing}>💭 {agent?.name} думает...</div>}
+        {chatMutation.isPending && (
+          <div className={s.typing}>💭 {agent?.name} думает...</div>
+        )}
       </div>
 
-      {/* Input */}
       <form className={s.inputArea} onSubmit={handleSend}>
         <input
           className={s.chatInput}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Напишите сообщение..."
-          disabled={loading}
+          disabled={chatMutation.isPending}
         />
         <button
           type="submit"
           className={s.sendBtn}
-          disabled={loading || !input.trim()}
+          disabled={chatMutation.isPending || !input.trim()}
         >
-          {loading ? '...' : '→'}
+          {chatMutation.isPending ? '...' : '→'}
         </button>
       </form>
     </div>

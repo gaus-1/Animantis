@@ -1,33 +1,28 @@
 import { type FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { api } from '@/api/client';
-import type { Agent, AgentCreate as AgentCreateData } from '@/api/types';
+import type { AgentCreate as AgentCreateData } from '@/api/types';
+import { useCreateAgent } from '@/hooks/useApi';
 
 import s from './AgentCreate.module.css';
 
 export function AgentCreate() {
   const navigate = useNavigate();
+  const createAgent = useCreateAgent();
   const [form, setForm] = useState<AgentCreateData>({
     name: '',
     personality: '',
     backstory: '',
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError('');
-    setLoading(true);
 
     try {
-      const agent = await api.post<Agent>('/api/v1/agents/', form);
+      const agent = await createAgent.mutateAsync(form);
       navigate(`/agent/${agent.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка создания');
-    } finally {
-      setLoading(false);
+    } catch {
+      // Error handled via createAgent.error
     }
   }
 
@@ -44,9 +39,7 @@ export function AgentCreate() {
 
         <form onSubmit={handleSubmit} className={s.form}>
           <div className={s.field}>
-            <label className={s.label} htmlFor="name">
-              Имя агента
-            </label>
+            <label className={s.label} htmlFor="name">Имя агента</label>
             <input
               id="name"
               className={s.input}
@@ -60,9 +53,7 @@ export function AgentCreate() {
           </div>
 
           <div className={s.field}>
-            <label className={s.label} htmlFor="personality">
-              Личность
-            </label>
+            <label className={s.label} htmlFor="personality">Личность</label>
             <textarea
               id="personality"
               className={s.textarea}
@@ -77,9 +68,7 @@ export function AgentCreate() {
           </div>
 
           <div className={s.field}>
-            <label className={s.label} htmlFor="backstory">
-              Предыстория
-            </label>
+            <label className={s.label} htmlFor="backstory">Предыстория</label>
             <textarea
               id="backstory"
               className={s.textarea}
@@ -93,10 +82,20 @@ export function AgentCreate() {
             <span className={s.hint}>Откуда пришёл? Что пережил?</span>
           </div>
 
-          {error && <div className={s.error}>⚠️ {error}</div>}
+          {createAgent.error && (
+            <div className={s.error}>
+              ⚠️ {createAgent.error instanceof Error
+                ? createAgent.error.message
+                : 'Ошибка создания'}
+            </div>
+          )}
 
-          <button type="submit" className={s.submitBtn} disabled={loading}>
-            {loading ? '⏳ Создаём...' : '🚀 Создать агента'}
+          <button
+            type="submit"
+            className={s.submitBtn}
+            disabled={createAgent.isPending}
+          >
+            {createAgent.isPending ? '⏳ Создаём...' : '🚀 Создать агента'}
           </button>
         </form>
       </div>

@@ -1,38 +1,15 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { api } from '@/api/client';
-import type { Agent, Post, WorldStats } from '@/api/types';
+import { useGlobalFeed, useMyAgents, useWorldStats } from '@/hooks/useApi';
 
 import s from './Dashboard.module.css';
 
 export function Dashboard() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [stats, setStats] = useState<WorldStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: posts = [], isLoading: feedLoading } = useGlobalFeed();
+  const { data: agents = [] } = useMyAgents();
+  const { data: stats } = useWorldStats();
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [feedRes, agentsRes, statsRes] = await Promise.all([
-          api.get<Post[]>('/api/v1/feed/?limit=20'),
-          api.get<Agent[]>('/api/v1/agents/'),
-          api.get<WorldStats>('/api/v1/world/stats'),
-        ]);
-        setPosts(feedRes);
-        setAgents(agentsRes);
-        setStats(statsRes);
-      } catch {
-        // Fail gracefully — show empty state
-      } finally {
-        setLoading(false);
-      }
-    }
-    void fetchData();
-  }, []);
-
-  if (loading) {
+  if (feedLoading) {
     return <div className={s.loading}>⏳ Загрузка мира...</div>;
   }
 
@@ -80,7 +57,6 @@ export function Dashboard() {
 
       {/* Stats Panel */}
       <aside className={s.statsPanel}>
-        {/* World Stats */}
         {stats && (
           <div className={s.statsCard}>
             <h3 className={s.statsTitle}>🌍 Мир Animantis</h3>
@@ -103,7 +79,6 @@ export function Dashboard() {
           </div>
         )}
 
-        {/* My Agents */}
         <div className={s.statsCard}>
           <h3 className={s.statsTitle}>🤖 Мои агенты</h3>
           {agents.length === 0 ? (

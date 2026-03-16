@@ -1,7 +1,4 @@
-import { useEffect, useState } from 'react';
-
-import { api } from '@/api/client';
-import type { WorldStats, Zone } from '@/api/types';
+import { useWorldStats, useWorldZones } from '@/hooks/useApi';
 
 import s from './WorldMap.module.css';
 
@@ -21,29 +18,10 @@ const ZONE_ICONS: Record<string, string> = {
 };
 
 export function WorldMap() {
-  const [zones, setZones] = useState<Zone[]>([]);
-  const [stats, setStats] = useState<WorldStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: zones = [], isLoading } = useWorldZones();
+  const { data: stats } = useWorldStats();
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [zonesRes, statsRes] = await Promise.all([
-          api.get<Zone[]>('/api/v1/world/zones'),
-          api.get<WorldStats>('/api/v1/world/stats'),
-        ]);
-        setZones(zonesRes);
-        setStats(statsRes);
-      } catch {
-        // fail gracefully
-      } finally {
-        setLoading(false);
-      }
-    }
-    void fetchData();
-  }, []);
-
-  if (loading) return <div className={s.loading}>⏳ Загрузка карты...</div>;
+  if (isLoading) return <div className={s.loading}>⏳ Загрузка карты...</div>;
 
   return (
     <div className={s.mapPage}>

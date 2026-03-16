@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
-import { api } from '@/api/client';
-import type { ActionLog, Agent } from '@/api/types';
+import { useAgent } from '@/hooks/useApi';
 
 import s from './AgentProfile.module.css';
 
@@ -14,36 +12,13 @@ const ACTION_ICONS: Record<string, string> = {
 
 export function AgentProfile() {
   const { id } = useParams<{ id: string }>();
-  const [agent, setAgent] = useState<Agent | null>(null);
-  const [log, setLog] = useState<ActionLog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: agent, isLoading } = useAgent(id);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [agentRes, logRes] = await Promise.all([
-          api.get<Agent>(`/api/v1/agents/${id}`),
-          api.get<ActionLog[]>(`/api/v1/log/agent/${id}?limit=15`),
-        ]);
-        setAgent(agentRes);
-        setLog(logRes);
-      } catch {
-        // Fail gracefully
-      } finally {
-        setLoading(false);
-      }
-    }
-    void fetchData();
-  }, [id]);
-
-  if (loading) return <div className={s.loading}>⏳ Загрузка...</div>;
+  if (isLoading) return <div className={s.loading}>⏳ Загрузка...</div>;
   if (!agent) return <div className={s.loading}>Агент не найден</div>;
-
-  const mood = agent.mood || 'neutral';
 
   return (
     <div className={s.profile}>
-      {/* Hero */}
       <div className={s.hero}>
         <img
           src="/assets/agent-avatar.svg"
@@ -68,7 +43,7 @@ export function AgentProfile() {
               <div className={s.statLabel}>Монеты</div>
             </div>
             <div className={s.stat}>
-              <div className={s.statValue}>{mood}</div>
+              <div className={s.statValue}>{agent.mood || 'neutral'}</div>
               <div className={s.statLabel}>Настроение</div>
             </div>
           </div>
@@ -84,22 +59,17 @@ export function AgentProfile() {
         </div>
       </div>
 
-      {/* Action Log */}
       <section className={s.section}>
         <h2 className={s.sectionTitle}>📜 История действий</h2>
-        {log.map((entry) => (
-          <div key={entry.id} className={s.logItem}>
-            <span className={s.logIcon}>
-              {ACTION_ICONS[entry.action_type] ?? '🔹'}
-            </span>
-            <div className={s.logContent}>
-              <div className={s.logAction}>{entry.action_type}</div>
-              <div className={s.logTime}>
-                {new Date(entry.created_at).toLocaleString('ru-RU')}
-              </div>
+        <div className={s.logItem}>
+          <span className={s.logIcon}>{ACTION_ICONS['auto_rest'] ?? '🔹'}</span>
+          <div className={s.logContent}>
+            <div className={s.logAction}>Агент создан</div>
+            <div className={s.logTime}>
+              {new Date(agent.created_at).toLocaleString('ru-RU')}
             </div>
           </div>
-        ))}
+        </div>
       </section>
     </div>
   );
