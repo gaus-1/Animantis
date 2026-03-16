@@ -64,13 +64,25 @@ async def setup_webhook() -> None:
 
     b = get_bot()
     webhook_url = settings.TELEGRAM_WEBHOOK_URL
-    logger.info("Setting webhook", extra={"url": webhook_url})
-
-    await b.set_webhook(
-        url=webhook_url,
-        drop_pending_updates=True,
+    token_masked = settings.TELEGRAM_BOT_TOKEN[:8] + "..." + settings.TELEGRAM_BOT_TOKEN[-4:]
+    logger.info(
+        "Setting webhook: url=%s, token=%s",
+        webhook_url,
+        token_masked,
     )
-    logger.info("Webhook set successfully")
+
+    try:
+        await b.set_webhook(
+            url=webhook_url,
+            drop_pending_updates=True,
+        )
+        logger.info("Webhook set successfully")
+    except Exception as e:  # noqa: BLE001
+        logger.error(
+            "Webhook setup FAILED: %s: %s",
+            type(e).__name__,
+            e,
+        )
 
 
 async def shutdown_bot() -> None:
