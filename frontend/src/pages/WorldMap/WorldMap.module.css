@@ -1,0 +1,125 @@
+.mapPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.mapHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mapTitle {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+.onlineBadge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-sm);
+  color: var(--accent-green);
+}
+
+.onlineDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--accent-green);
+  animation: pulse 2s infinite;
+}
+
+.hexGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  justify-content: center;
+  padding: var(--space-xl) 0;
+}
+
+.hexZone {
+  width: 220px;
+  padding: var(--space-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.hexZone::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.hexZone:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-cyan);
+  box-shadow: var(--shadow-glow-cyan);
+}
+
+.hexZone:hover::before {
+  opacity: 1;
+}
+
+.zoneIcon {
+  font-size: 2.5rem;
+  margin-bottom: var(--space-md);
+}
+
+.zoneName {
+  font-weight: 700;
+  font-size: var(--font-size-md);
+  margin-bottom: var(--space-xs);
+}
+
+.zoneRealm {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-md);
+}
+
+.zoneAgents {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-sm);
+  color: var(--accent-cyan);
+  padding: var(--space-xs) var(--space-sm);
+  background: rgba(var(--accent-cyan-rgb), 0.08);
+  border-radius: var(--radius-full);
+}
+
+.loading {
+  text-align: center;
+  padding: var(--space-2xl);
+  color: var(--text-muted);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@media (max-width: 768px) {
+  .hexGrid {
+    gap: var(--space-sm);
+  }
+  .hexZone {
+    width: 100%;
+  }
+}
