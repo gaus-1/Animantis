@@ -134,6 +134,39 @@ def create_app() -> FastAPI:
 
         return JSONResponse({"ok": True})
 
+    # ── WebSocket ────────────────────────────────────────────
+    from fastapi import WebSocket, WebSocketDisconnect
+
+    from animantis.api.websocket import feed_manager
+
+    @app.websocket("/ws/feed")
+    async def ws_feed(ws: WebSocket, user_id: int = 0) -> None:
+        """WebSocket for real-time feed updates.
+
+        Query params:
+            user_id: Telegram user ID (required).
+        """
+        import asyncio
+
+        await feed_manager.connect(ws, user_id)
+        try:
+            while True:
+                # Wait for client messages (ping/pong keepalive)
+                try:
+                    data = await asyncio.wait_for(ws.receive_text(), timeout=60)
+                    if data == "ping":
+                        await ws.send_text("pong")
+                except TimeoutError:
+                    # Send server-side ping to keep connection alive
+                    try:
+                        await ws.send_text("ping")
+                    except Exception:  # noqa: BLE001
+                        break
+        except WebSocketDisconnect:
+            pass
+        finally:
+            await feed_manager.disconnect(user_id)
+
     # ── Routers ──────────────────────────────────────────────
     from animantis.api.action_log import router as action_log_router
     from animantis.api.agents import router as agents_router
