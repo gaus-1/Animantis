@@ -136,6 +136,26 @@ async def generate_world_event(db: AsyncSession) -> WorldEvent | None:
     await db.commit()
     await db.refresh(event)
 
+    # Broadast notification
+    try:
+        from animantis.db.models import Agent
+        from animantis.bot.notifications import notify_world_event
+        import asyncio
+        
+        # Determine who to notify (users with alive agents in the affected zone, or all if global)
+        notify_q = select(Agent.user_id).where(Agent.is_alive.is_(True)).distinct()
+        if zone_id:
+            notify_q = notify_q.where(Agent.zone_id == zone_id)
+            
+        notify_result = await db.execute(notify_q)
+        affected_users = notify_result.scalars().all()
+        
+        for u_id in affected_users:
+            if u_id:
+                asyncio.create_task(notify_world_event(u_id, event.title, event.description))
+    except Exception as e:
+        logger.exception("Failed to send world event notification", extra={"error": str(e)})
+
     logger.info(
         "World event generated",
         extra={

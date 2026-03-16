@@ -60,6 +60,24 @@ async def create_or_update_relationship(
     db.add(rel)
     await db.commit()
     await db.refresh(rel)
+    
+    # Notify both owners
+    try:
+        from animantis.db.models import Agent
+        from animantis.bot.notifications import notify_relationship
+        import asyncio
+        
+        agent_a = await db.get(Agent, a_id)
+        agent_b = await db.get(Agent, b_id)
+        
+        if agent_a and agent_b:
+            if agent_a.user_id:
+                asyncio.create_task(notify_relationship(agent_a.user_id, agent_a.name, agent_b.name, rel.type, "new"))
+            if agent_b.user_id:
+                asyncio.create_task(notify_relationship(agent_b.user_id, agent_b.name, agent_a.name, rel.type, "new"))
+    except Exception as e:
+        logger.exception("Failed to send relationship notification", extra={"error": str(e)})
+
     return rel
 
 
