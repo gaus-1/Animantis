@@ -23,7 +23,7 @@ class TestHealthEndpoints:
         assert data["message"] == "pong"
         assert data["version"] == "0.1.0"
 
-    def test_nonexistent_route_returns_404(self, client):
-        """GET /nonexistent → 404."""
-        response = client.get("/nonexistent")
+    def test_nonexistent_api_route_returns_404(self, client):
+        """GET /api/nonexistent → 404."""
+        response = client.get("/api/nonexistent")
         assert response.status_code == 404

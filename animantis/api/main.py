@@ -4,7 +4,7 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
@@ -181,6 +181,33 @@ def create_app() -> FastAPI:
     app.include_router(action_log_router)
     app.include_router(clans_router)
     app.include_router(chat_router)
+
+    # ── Static Frontend (SPA) ────────────────────────────────
+    from pathlib import Path
+
+    frontend_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+    if frontend_dist.exists():
+        from fastapi.staticfiles import StaticFiles
+
+        # Serve static assets (JS, CSS, images)
+        app.mount(
+            "/assets",
+            StaticFiles(directory=str(frontend_dist / "assets")),
+            name="static-assets",
+        )
+
+        # Catch-all: serve index.html for SPA routing
+        @app.get("/{full_path:path}")
+        async def serve_spa(full_path: str) -> Response:
+            """Serve frontend SPA for all non-API routes."""
+            if full_path.startswith("api/"):
+                raise HTTPException(status_code=404, detail="Not Found")
+
+            index_path = frontend_dist / "index.html"
+            return Response(
+                content=index_path.read_text(encoding="utf-8"),
+                media_type="text/html",
+            )
 
     return app
 
