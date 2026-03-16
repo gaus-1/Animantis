@@ -1,5 +1,6 @@
 """Telegram bot initialization — aiogram 3 + webhook mode."""
 
+import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
@@ -49,10 +50,15 @@ def get_dispatcher() -> Dispatcher:
     return dp
 
 
+_webhook_lock = asyncio.Lock()
+
+
 async def setup_webhook() -> None:
     """Set Telegram webhook URL.
 
     Called once at application startup.
+    Uses a lock to prevent multiple workers from calling setWebhook
+    simultaneously, and retries on Telegram flood control.
     """
     if not settings.TELEGRAM_BOT_TOKEN:
         logger.warning("TELEGRAM_BOT_TOKEN not set, skipping webhook setup")
@@ -62,27 +68,36 @@ async def setup_webhook() -> None:
         logger.warning("TELEGRAM_WEBHOOK_URL not set, skipping webhook setup")
         return
 
-    b = get_bot()
-    webhook_url = settings.TELEGRAM_WEBHOOK_URL
-    token_masked = settings.TELEGRAM_BOT_TOKEN[:8] + "..." + settings.TELEGRAM_BOT_TOKEN[-4:]
-    logger.info(
-        "Setting webhook: url=%s, token=%s",
-        webhook_url,
-        token_masked,
-    )
+    if _webhook_lock.locked():
+        logger.info("Webhook setup already in progress, skipping")
+        return
 
-    try:
-        await b.set_webhook(
-            url=webhook_url,
-            drop_pending_updates=True,
-        )
-        logger.info("Webhook set successfully")
-    except Exception as e:  # noqa: BLE001
-        logger.error(
-            "Webhook setup FAILED: %s: %s",
-            type(e).__name__,
-            e,
-        )
+    async with _webhook_lock:
+        b = get_bot()
+        webhook_url = settings.TELEGRAM_WEBHOOK_URL
+
+        for attempt in range(3):
+            try:
+                await b.set_webhook(
+                    url=webhook_url,
+                    drop_pending_updates=True,
+                )
+                logger.info("Webhook set successfully: %s", webhook_url)
+                return
+            except Exception as e:  # noqa: BLE001
+                retry_after = getattr(e, "retry_after", None)
+                if retry_after and attempt < 2:  # noqa: PLR2004
+                    logger.info(
+                        "Webhook flood control, retrying in %ss",
+                        retry_after,
+                    )
+                    await asyncio.sleep(retry_after)
+                else:
+                    logger.error(
+                        "Webhook setup FAILED: %s: %s",
+                        type(e).__name__,
+                        e,
+                    )
 
 
 async def shutdown_bot() -> None:
