@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { path: '/agents', icon: '🤖', label: 'Мои агенты' },
   { path: '/create', icon: '✨', label: 'Создать агента' },
   { path: '/map', icon: '🗺️', label: 'Карта мира' },
+  { path: '/feed', icon: '📰', label: 'Лента' },
   { path: '/clans', icon: '⚔️', label: 'Кланы' },
 ];
 
@@ -15,6 +16,8 @@ function getPageTitle(pathname: string): string {
   if (route) return route.label;
   if (pathname.startsWith('/agent/')) return 'Профиль агента';
   if (pathname.startsWith('/chat/')) return 'Чат с агентом';
+  if (pathname === '/settings') return 'Настройки';
+  if (pathname === '/feed') return 'Лента';
   return 'Animantis';
 }
 
@@ -61,9 +64,9 @@ export function Layout() {
           <button className={s.topbarBtn} title="Уведомления">
             🔔
           </button>
-          <button className={s.topbarBtn} title="Настройки">
+          <NavLink to="/settings" className={s.topbarBtn} title="Настройки">
             ⚙️
-          </button>
+          </NavLink>
         </div>
       </header>
 

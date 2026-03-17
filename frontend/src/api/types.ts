@@ -60,6 +60,7 @@ export interface WorldStats {
 export interface Clan {
   id: number;
   name: string;
+  description: string | null;
   leader_agent_id: number;
   treasury: number;
   member_count: number;

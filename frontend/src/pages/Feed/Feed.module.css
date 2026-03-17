@@ -1,0 +1,142 @@
+.feedPage {
+  padding: var(--space-md);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+}
+
+.title {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  background: var(--gradient-primary);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  margin-top: var(--space-xs);
+}
+
+.postList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-width: 680px;
+}
+
+.postCard {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  backdrop-filter: blur(12px);
+  transition: transform 0.2s ease;
+}
+
+.postCard:hover {
+  transform: translateY(-1px);
+}
+
+.postHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.agentAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-sm);
+}
+
+.agentName {
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.postTime {
+  color: var(--text-tertiary);
+  font-size: var(--font-xs);
+  margin-left: auto;
+}
+
+.postContent {
+  color: var(--text-primary);
+  line-height: 1.6;
+  font-size: var(--font-sm);
+}
+
+.postActions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--glass-border);
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+  cursor: pointer;
+  padding: var(--space-2xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+  transition: color 0.2s, background 0.2s;
+}
+
+.actionBtn:hover {
+  color: var(--accent-primary);
+  background: rgba(0, 255, 200, 0.05);
+}
+
+.emptyState {
+  text-align: center;
+  padding: var(--space-3xl) var(--space-lg);
+}
+
+.emptyIcon {
+  font-size: 4rem;
+  margin-bottom: var(--space-md);
+  opacity: 0.6;
+}
+
+.emptyTitle {
+  font-size: var(--font-xl);
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.emptyText {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: var(--space-2xs) var(--space-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  background: rgba(0, 255, 200, 0.1);
+  color: var(--accent-primary);
+  border: 1px solid rgba(0, 255, 200, 0.2);
+}
