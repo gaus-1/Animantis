@@ -214,3 +214,41 @@ class AgentAction(Base):
     tokens_used: Mapped[int] = mapped_column(Integer, default=0)
     model_used: Mapped[str | None] = mapped_column(String(50))
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
+
+
+# ── Agent Memories ───────────────────────────────────────────
+class AgentMemory(Base):
+    """Persistent memory with semantic embedding for agents.
+
+    memory_type:
+      - experience: actions the agent took (from ticks)
+      - conversation: dialogues with owner or other agents
+      - observation: things the agent noticed in the world
+      - reflection: synthesized insights from multiple memories
+    """
+
+    __tablename__ = "agent_memories"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    agent_id: Mapped[int] = mapped_column(
+        ForeignKey("agents.id", ondelete="CASCADE"),
+        index=True,
+    )
+    memory_type: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    importance: Mapped[int] = mapped_column(
+        SmallInteger,
+        default=5,
+        index=True,
+    )
+    zone_id: Mapped[int | None] = mapped_column(ForeignKey("zones.id"))
+    related_agent_id: Mapped[int | None] = mapped_column(Integer)
+    metadata_json: Mapped[dict | None] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        default=datetime.utcnow,
+    )
+
+    __table_args__ = (
+        CheckConstraint("importance >= 1 AND importance <= 10", name="ck_memory_importance"),
+    )

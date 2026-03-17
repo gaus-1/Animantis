@@ -13,7 +13,7 @@ from animantis.db.models import Agent
 from animantis.llm.prompts import build_chat_prompt
 from animantis.llm.router import LLMError, generate_chat
 from animantis.services.agent_service import AgentNotFoundError, get_agent
-from animantis.services.memory_service import get_chat_context
+from animantis.services.memory_service import get_chat_context, record_chat_memory
 
 logger = logging.getLogger("animantis")
 
@@ -94,6 +94,15 @@ async def chat_with_agent(
     except LLMError as e:
         logger.exception("Chat LLM error", extra={"agent_id": agent_id})
         raise HTTPException(status_code=503, detail="AI service unavailable") from e
+
+    # Record conversation memory
+    await record_chat_memory(
+        db=db,
+        agent_id=agent_id,
+        user_message=data.message,
+        agent_reply=llm_response.text,
+    )
+    await db.commit()
 
     return ChatResponse(
         agent_id=agent.id,

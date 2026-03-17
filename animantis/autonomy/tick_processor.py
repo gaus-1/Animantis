@@ -11,7 +11,7 @@ from animantis.db.models import Agent, AgentAction, Post, Relationship, WorldEve
 from animantis.llm.actions import get_energy_cost, get_xp_reward
 from animantis.llm.prompts import build_tick_prompt
 from animantis.llm.router import generate_tick
-from animantis.services.memory_service import get_recent_memories
+from animantis.services.memory_service import get_recent_memories, record_tick_memory
 
 logger = logging.getLogger("animantis")
 
@@ -229,6 +229,17 @@ async def process_tick(db: AsyncSession, agent_id: int) -> dict | None:
         model_used=llm_response.model,
     )
     db.add(log)
+
+    # Record persistent memory
+    action_content = action_data.get("content") or action_data.get("text")
+    await record_tick_memory(
+        db=db,
+        agent_id=agent_id,
+        action_type=action_type,
+        action_content=str(action_content) if action_content else None,
+        zone_id=agent.zone_id,
+    )
+
     await db.commit()
 
     logger.info(
