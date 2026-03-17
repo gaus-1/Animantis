@@ -40,7 +40,7 @@ class ApiClient {
       if (typeof data.detail === 'string') {
         message = data.detail;
       } else if (Array.isArray(data.detail)) {
-        message = data.detail.map((e: any) => e.msg).join(', ');
+        message = data.detail.map((e: { msg: string }) => e.msg).join(', ');
       }
       throw new ApiError(response.status, message);
     }

@@ -145,6 +145,26 @@ async def process_tick(db: AsyncSession, agent_id: int) -> dict | None:
         if ev.title:
             event_strs.append(f"{ev.title}: {ev.description[:100] if ev.description else ''}")
 
+    # Fetch pending owner command (if any)
+    owner_command: str | None = None
+    cmd_q = (
+        select(AgentAction)
+        .where(
+            AgentAction.agent_id == agent_id,
+            AgentAction.action_type == "owner_command",
+        )
+        .order_by(AgentAction.created_at.desc())
+        .limit(1)
+    )
+    cmd_result = await db.execute(cmd_q)
+    cmd_action = cmd_result.scalar_one_or_none()
+    if cmd_action and cmd_action.details:
+        details = cmd_action.details
+        if not details.get("processed"):
+            owner_command = details.get("command")
+            # Mark as processed so it won't be picked up again
+            cmd_action.details = {**details, "processed": True}
+
     # 4. Build prompt and call LLM
     messages = build_tick_prompt(
         name=agent.name,
@@ -161,7 +181,7 @@ async def process_tick(db: AsyncSession, agent_id: int) -> dict | None:
         relationships=rel_data,
         recent_posts=recent_post_strs,
         world_events=event_strs,
-        owner_command=None,  # Phase 6: Telegram bot commands
+        owner_command=owner_command,
     )
 
     cache_key = f"tick:{agent_id}:{agent.zone_id}:{len(nearby_agents)}"

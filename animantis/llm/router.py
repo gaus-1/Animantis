@@ -6,6 +6,7 @@ import logging
 from dataclasses import dataclass
 
 import httpx
+from redis.asyncio import ConnectionPool, Redis  # type: ignore[import-untyped]
 
 from animantis.config.settings import settings
 
@@ -24,12 +25,56 @@ class LLMResponse:
     cached: bool = False
 
 
-# ── YandexGPT Client ────────────────────────────────────────
+# ── Connection Pools (module-level singletons) ──────────────
+
+_http_client: httpx.AsyncClient | None = None
+_redis_pool: ConnectionPool | None = None
 
 YANDEX_API_URL = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
-
 MAX_RETRIES = 3
 TIMEOUT_SECONDS = 30
+
+
+def _get_http_client() -> httpx.AsyncClient:
+    """Get or create a pooled httpx client."""
+    global _http_client  # noqa: PLW0603
+    if _http_client is None or _http_client.is_closed:
+        _http_client = httpx.AsyncClient(
+            timeout=TIMEOUT_SECONDS,
+            limits=httpx.Limits(
+                max_connections=20,
+                max_keepalive_connections=10,
+                keepalive_expiry=30,
+            ),
+        )
+    return _http_client
+
+
+def _get_redis() -> Redis:
+    """Get Redis client backed by a shared connection pool."""
+    global _redis_pool  # noqa: PLW0603
+    if _redis_pool is None:
+        _redis_pool = ConnectionPool.from_url(
+            settings.REDIS_URL,
+            max_connections=10,
+            decode_responses=True,
+        )
+    return Redis(connection_pool=_redis_pool)
+
+
+async def close_pools() -> None:
+    """Close connection pools on shutdown. Call from FastAPI lifespan."""
+    global _http_client, _redis_pool  # noqa: PLW0603
+    if _http_client and not _http_client.is_closed:
+        await _http_client.aclose()
+        _http_client = None
+    if _redis_pool:
+        await _redis_pool.aclose()
+        _redis_pool = None
+    logger.info("LLM connection pools closed")
+
+
+# ── YandexGPT Client ────────────────────────────────────────
 
 
 async def _call_yandex_gpt(
@@ -67,12 +112,12 @@ async def _call_yandex_gpt(
     }
 
     last_error: Exception | None = None
+    client = _get_http_client()
 
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
-                resp = await client.post(YANDEX_API_URL, json=payload, headers=headers)
-                resp.raise_for_status()
+            resp = await client.post(YANDEX_API_URL, json=payload, headers=headers)
+            resp.raise_for_status()
 
             data = resp.json()
             result = data["result"]
@@ -99,7 +144,6 @@ async def _call_yandex_gpt(
                 extra={"status": e.response.status_code, "attempt": attempt},
             )
             if e.response.status_code == 429:
-                # Rate limited — wait longer between retries
                 import asyncio
 
                 await asyncio.sleep(attempt * 2)
@@ -118,18 +162,7 @@ async def generate_tick(
     messages: list[dict[str, str]],
     cache_key: str | None = None,
 ) -> LLMResponse:
-    """Generate agent tick response using YandexGPT Lite.
-
-    Uses Lite model for cost efficiency. Falls back if needed.
-
-    Args:
-        messages: Prompt messages.
-        cache_key: Optional Redis cache key.
-
-    Returns:
-        LLMResponse.
-    """
-    # Check cache
+    """Generate agent tick response using YandexGPT Lite."""
     if cache_key:
         cached = await _get_cache(cache_key)
         if cached:
@@ -150,7 +183,6 @@ async def generate_tick(
             tokens_used=0,
         )
 
-    # Save to cache
     if cache_key and response.model != "fallback":
         await _set_cache(cache_key, response)
 
@@ -160,16 +192,7 @@ async def generate_tick(
 async def generate_chat(
     messages: list[dict[str, str]],
 ) -> LLMResponse:
-    """Generate chat response using YandexGPT Pro.
-
-    Used for direct user-agent conversation. No caching (unique).
-
-    Args:
-        messages: Prompt messages.
-
-    Returns:
-        LLMResponse.
-    """
+    """Generate chat response using YandexGPT Pro."""
     return await _call_yandex_gpt(
         messages=messages,
         model_uri=settings.yandex_gpt_pro_uri,
@@ -189,13 +212,10 @@ def _make_cache_hash(key: str) -> str:
 
 
 async def _get_cache(key: str) -> LLMResponse | None:
-    """Get cached LLM response from Redis."""
+    """Get cached LLM response from Redis (pooled)."""
     try:
-        from redis.asyncio import from_url  # type: ignore[import-untyped]
-
-        redis = from_url(settings.REDIS_URL)
+        redis = _get_redis()
         data = await redis.get(_make_cache_hash(key))
-        await redis.aclose()
 
         if data:
             parsed = json.loads(data)
@@ -212,14 +232,11 @@ async def _get_cache(key: str) -> LLMResponse | None:
 
 
 async def _set_cache(key: str, response: LLMResponse) -> None:
-    """Cache LLM response in Redis."""
+    """Cache LLM response in Redis (pooled)."""
     try:
-        from redis.asyncio import from_url  # type: ignore[import-untyped]
-
-        redis = from_url(settings.REDIS_URL)
+        redis = _get_redis()
         data = json.dumps({"text": response.text, "model": response.model})
         await redis.setex(_make_cache_hash(key), CACHE_TTL, data)
-        await redis.aclose()
     except Exception:  # noqa: BLE001
         logger.warning("Redis cache write error")
 

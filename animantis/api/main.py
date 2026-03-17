@@ -54,9 +54,11 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     try:
         from animantis.api.rate_limit import close_redis
         from animantis.bot.main import shutdown_bot
+        from animantis.llm.router import close_pools
 
         await shutdown_bot()
         await close_redis()
+        await close_pools()
     except Exception:  # noqa: BLE001
         logger.warning("Shutdown cleanup error (non-critical)")
 
