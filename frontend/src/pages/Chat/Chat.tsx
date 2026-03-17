@@ -1,7 +1,9 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 
 import { useAgent, useChatMutation } from '@/hooks/useApi';
+import { MoodBadge } from '@/components/MoodBadge/MoodBadge';
+import { Skeleton } from '@/components/Skeleton/Skeleton';
 
 import s from './Chat.module.css';
 
@@ -56,29 +58,49 @@ export function Chat() {
   }
 
   if (agentLoading) {
-    return <div className={s.loading}>⏳ Загрузка...</div>;
+    return (
+      <div className={s.chatPage}>
+        <div className={s.chatHeader}>
+          <Skeleton variant="circle" width="44px" height="44px" />
+          <div>
+            <Skeleton variant="text" width="150px" height="16px" />
+            <Skeleton variant="text" width="100px" height="12px" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className={s.chatPage}>
       <div className={s.chatHeader}>
-        <img
-          src="/assets/agent-avatar.svg"
-          alt={agent?.name ?? 'Agent'}
-          className={s.chatAvatar}
-        />
-        <div>
+        <Link to={`/agent/${agent?.id}`} className={s.avatarLink}>
+          <img
+            src="/assets/agent-avatar.svg"
+            alt={agent?.name ?? 'Agent'}
+            className={s.chatAvatar}
+          />
+          <span className={s.onlineIndicator} />
+        </Link>
+        <div className={s.headerInfo}>
           <div className={s.chatName}>{agent?.name ?? 'Агент'}</div>
-          <div className={s.chatMood}>
-            Настроение: {currentMood} · Lv.{agent?.level ?? 1}
+          <div className={s.chatStatus}>
+            <MoodBadge mood={currentMood} size="sm" />
+            <span className={s.chatLevel}>Lv.{agent?.level ?? 1}</span>
           </div>
         </div>
       </div>
 
       <div className={s.messages} ref={messagesRef}>
         {messages.length === 0 && (
-          <div className={s.typing}>
-            Начните разговор с {agent?.name ?? 'агентом'}...
+          <div className={s.welcome}>
+            <div className={s.welcomeIcon}>💬</div>
+            <p className={s.welcomeText}>
+              Начните разговор с {agent?.name ?? 'агентом'}
+            </p>
+            <p className={s.welcomeHint}>
+              Агент ответит в своём характере и настроении
+            </p>
           </div>
         )}
         {messages.map((msg, i) => (
@@ -88,11 +110,27 @@ export function Chat() {
               msg.role === 'user' ? s.bubbleUser : s.bubbleAgent
             }`}
           >
-            {msg.text}
+            {msg.role === 'agent' && (
+              <img
+                src="/assets/agent-avatar.svg"
+                alt=""
+                className={s.bubbleAvatar}
+              />
+            )}
+            <div className={s.bubbleContent}>
+              {msg.text}
+            </div>
           </div>
         ))}
         {chatMutation.isPending && (
-          <div className={s.typing}>💭 {agent?.name} думает...</div>
+          <div className={`${s.bubble} ${s.bubbleAgent}`}>
+            <img src="/assets/agent-avatar.svg" alt="" className={s.bubbleAvatar} />
+            <div className={s.typingDots}>
+              <span className={s.dot} />
+              <span className={s.dot} />
+              <span className={s.dot} />
+            </div>
+          </div>
         )}
       </div>
 
@@ -109,7 +147,7 @@ export function Chat() {
           className={s.sendBtn}
           disabled={chatMutation.isPending || !input.trim()}
         >
-          {chatMutation.isPending ? '...' : '→'}
+          <span className={s.sendIcon}>↑</span>
         </button>
       </form>
     </div>

@@ -1,0 +1,89 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+  white-space: nowrap;
+  animation: scale-in 0.3s ease;
+}
+
+.emoji { line-height: 1; }
+
+/* Sizes */
+.sm { font-size: var(--font-size-xs); padding: 1px 6px; }
+.sm .emoji { font-size: 0.7rem; }
+
+.md { font-size: var(--font-size-sm); }
+.md .emoji { font-size: 0.85rem; }
+
+.lg { font-size: var(--font-size-md); padding: 4px 12px; }
+.lg .emoji { font-size: 1.1rem; }
+
+/* Mood Colors */
+.moodHappy {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.moodExcited {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+.moodCurious {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.moodNeutral {
+  background: rgba(139, 143, 163, 0.15);
+  color: var(--text-secondary);
+  border: 1px solid rgba(139, 143, 163, 0.3);
+}
+.moodThoughtful {
+  background: rgba(99, 102, 241, 0.15);
+  color: #6366f1;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+.moodSad {
+  background: rgba(96, 165, 250, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+.moodAngry {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.moodTired {
+  background: rgba(139, 143, 163, 0.1);
+  color: var(--text-muted);
+  border: 1px solid rgba(139, 143, 163, 0.2);
+}
+.moodScared {
+  background: rgba(167, 139, 250, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(167, 139, 250, 0.3);
+}
+.moodPlayful {
+  background: rgba(244, 114, 182, 0.15);
+  color: #f472b6;
+  border: 1px solid rgba(244, 114, 182, 0.3);
+}
+.moodConfused {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.moodInspired {
+  background: rgba(0, 255, 229, 0.12);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(0, 255, 229, 0.3);
+}
+.moodRomantic {
+  background: rgba(236, 72, 153, 0.15);
+  color: #ec4899;
+  border: 1px solid rgba(236, 72, 153, 0.3);
+}

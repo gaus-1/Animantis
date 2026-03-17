@@ -6,6 +6,7 @@
   width: 100%;
 }
 
+/* ── Header ────────────────────────────────────────────────── */
 .mapHeader {
   position: absolute;
   top: 0;
@@ -16,15 +17,32 @@
   justify-content: space-between;
   align-items: center;
   z-index: 10;
-  background: linear-gradient(to bottom, rgba(10, 14, 26, 0.9), transparent);
+  background: linear-gradient(to bottom, rgba(6, 10, 20, 0.95), transparent);
   pointer-events: none;
 }
 
 .mapTitle {
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  color: var(--text-primary);
-  text-shadow: 0 0 10px rgba(0, 255, 229, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.titleGlow {
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  background: var(--gradient-cyan-purple);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 0 10px rgba(var(--accent-cyan-rgb), 0.3));
+}
+
+.titleSub {
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
 }
 
 .onlineBadge {
@@ -33,10 +51,13 @@
   gap: var(--space-sm);
   font-size: var(--font-size-sm);
   color: var(--accent-green);
-  background: rgba(10, 14, 26, 0.8);
-  padding: var(--space-xs) var(--space-sm);
+  background: rgba(6, 10, 20, 0.85);
+  backdrop-filter: blur(8px);
+  padding: var(--space-xs) var(--space-md);
   border-radius: var(--radius-full);
   border: 1px solid rgba(16, 185, 129, 0.3);
+  pointer-events: auto;
+  animation: glow-pulse 3s ease infinite;
 }
 
 .onlineDot {
@@ -47,106 +68,213 @@
   animation: pulse 2s infinite;
 }
 
+/* ── Canvas ────────────────────────────────────────────────── */
 .canvasContainer {
   flex: 1;
   width: 100%;
   border-radius: var(--radius-lg);
   overflow: hidden;
   border: 1px solid var(--glass-border);
-  background: radial-gradient(circle at center, #0a0e1a 0%, #020305 100%);
+  background: radial-gradient(ellipse at center, #080c18 0%, #020305 100%);
   position: relative;
 }
 
-.nodeLabel {
-  background: rgba(10, 14, 26, 0.4);
-  border: 1px solid rgba(0, 255, 229, 0.2);
-  padding: 4px;
+/* ── Realm Selector ────────────────────────────────────────── */
+.realmSelector {
+  position: absolute;
+  left: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(6, 10, 20, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-sm);
+}
+
+.realmBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+.realmBtn:hover {
+  background: rgba(var(--accent-cyan-rgb), 0.08);
+  color: var(--text-primary);
+}
+.realmBtnActive {
+  background: rgba(var(--accent-cyan-rgb), 0.15);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(var(--accent-cyan-rgb), 0.3);
+}
+
+/* ── Zone Marker (on planet) ───────────────────────────────── */
+.zoneMarker {
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-full);
-  color: transparent; /* Hide text by default */
-  font-family: var(--font);
-  text-align: center;
-  backdrop-filter: blur(2px);
-  transform: translate3d(-50%, -50%, 0);
-  pointer-events: none;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 0 10px rgba(0, 255, 229, 0.1);
+  background: rgba(6, 10, 20, 0.7);
+  border: 1.5px solid rgba(var(--accent-cyan-rgb), 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 0 6px rgba(var(--accent-cyan-rgb), 0.2);
+}
+.zoneMarker:hover {
+  transform: scale(1.3);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 15px rgba(var(--accent-cyan-rgb), 0.5);
+  background: rgba(6, 10, 20, 0.9);
+}
+
+/* ── Realm Label (orbiting worlds) ─────────────────────────── */
+.realmLabel {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  overflow: hidden;
+  background: rgba(6, 10, 20, 0.5);
+  border: 1px solid rgba(var(--accent-cyan-rgb), 0.15);
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  pointer-events: none;
+  transform: translateY(-100%);
+  transition: all 0.3s ease;
+  opacity: 0.6;
+}
+.realmLabelHovered {
+  opacity: 1;
+  background: rgba(6, 10, 20, 0.9);
+  border-color: rgba(var(--accent-cyan-rgb), 0.4);
+  box-shadow: 0 0 15px rgba(var(--accent-cyan-rgb), 0.15);
+  padding: 8px 14px;
 }
 
-.nodeLabelHovered {
-  border-color: var(--accent-cyan);
-  box-shadow: 0 0 20px rgba(0, 255, 229, 0.5);
-  background: rgba(10, 14, 26, 0.9);
+.realmIcon { font-size: 1.2rem; line-height: 1; }
+.realmName {
+  font-size: 10px;
+  font-weight: 600;
   color: var(--text-primary);
-  padding: var(--space-md);
-  border-radius: var(--radius-lg);
-  width: 160px;
-  height: auto;
-  transform: translate3d(-50%, -120%, 0);
-  z-index: 100;
+  white-space: nowrap;
 }
-
-.nodeIcon {
-  font-size: 1.2rem;
-  margin-bottom: 0;
-  transition: margin 0.3s ease;
-  line-height: 1;
-}
-
-.nodeLabelHovered .nodeIcon {
-  margin-bottom: var(--space-xs);
-  font-size: 1.5rem;
-}
-
-.nodeInfo {
+.realmCount {
+  font-size: 9px;
+  color: var(--accent-cyan);
   opacity: 0;
   max-height: 0;
-  transition: opacity 0.2s ease;
+  transition: all 0.2s ease;
 }
-
-.nodeLabelHovered .nodeInfo {
+.realmLabelHovered .realmCount {
   opacity: 1;
-  max-height: 100px;
-  transition-delay: 0.1s;
+  max-height: 20px;
 }
 
-.nodeName {
-  font-weight: 700;
-  font-size: var(--font-size-sm);
-  margin-bottom: 2px;
-  color: var(--text-primary);
+/* ── Zone Details Panel ────────────────────────────────────── */
+.zonePanel {
+  position: absolute;
+  right: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  background: rgba(6, 10, 20, 0.92);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(var(--accent-cyan-rgb), 0.2);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  min-width: 220px;
+  animation: scale-in 0.3s ease;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(var(--accent-cyan-rgb), 0.08);
 }
 
-.nodeRealm {
-  font-size: 10px;
-  color: var(--accent-purple);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 6px;
-}
-
-.nodeAgents {
-  font-size: 11px;
-  color: var(--accent-cyan);
+.zonePanelClose {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  background: none;
+  color: var(--text-muted);
+  font-size: var(--font-size-md);
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  background: rgba(0, 255, 229, 0.1);
-  padding: 2px 6px;
   border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
+}
+.zonePanelClose:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
 }
 
-.loading {
+.zonePanelIcon {
+  font-size: 2.5rem;
   text-align: center;
-  padding: var(--space-2xl);
+  margin-bottom: var(--space-sm);
+  animation: float 3s ease-in-out infinite;
+}
+
+.zonePanelName {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.zonePanelRealm {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--accent-cyan);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-md);
+}
+
+.zonePanelStats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.zonePanelStat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
+}
+
+.zonePanelStatValue {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.zonePanelStatLabel {
+  font-size: var(--font-size-xs);
   color: var(--text-muted);
+}
+
+/* ── Loading ───────────────────────────────────────────────── */
+.loadingPage {
+  padding: var(--space-lg);
 }
 
 @keyframes pulse {

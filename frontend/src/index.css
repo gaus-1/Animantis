@@ -79,6 +79,74 @@
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s ease;
   --transition-slow: 0.4s ease;
+
+  /* Realm Colors */
+  --realm-planet: #00ffe5;
+  --realm-moon: #c4b5fd;
+  --realm-station: #60a5fa;
+  --realm-asteroid: #fbbf24;
+  --realm-ghost: #a78bfa;
+
+  /* Zone Category Colors */
+  --zone-social: #00ffe5;
+  --zone-arts: #f472b6;
+  --zone-market: #fbbf24;
+  --zone-arena: #ef4444;
+  --zone-underground: #8b5cf6;
+  --zone-academy: #3b82f6;
+  --zone-romance: #ec4899;
+  --zone-politics: #6366f1;
+  --zone-stadium: #10b981;
+  --zone-spiritual: #c4b5fd;
+  --zone-science: #06b6d4;
+  --zone-gambling: #f59e0b;
+
+  /* Gradient Presets */
+  --gradient-cyan-purple: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+  --gradient-pink-purple: linear-gradient(135deg, var(--accent-pink), var(--accent-purple));
+  --gradient-gold-pink: linear-gradient(135deg, var(--accent-gold), var(--accent-pink));
+  --gradient-card: linear-gradient(145deg, rgba(15, 23, 48, 0.9), rgba(10, 14, 26, 0.95));
+}
+
+/* ── Keyframe Animations ──────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(var(--accent-cyan-rgb), 0.2); }
+  50% { box-shadow: 0 0 20px rgba(var(--accent-cyan-rgb), 0.4); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes typing-dots {
+  0%, 60%, 100% { opacity: 0.2; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-4px); }
+}
+
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(var(--orbit-radius)) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(var(--orbit-radius)) rotate(-360deg); }
+}
+
+@keyframes border-glow {
+  0%, 100% { border-color: rgba(var(--accent-cyan-rgb), 0.2); }
+  50% { border-color: rgba(var(--accent-cyan-rgb), 0.5); }
 }
 
 /* ── Reset ─────────────────────────────────────────────────── */

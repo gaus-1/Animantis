@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom';
 
 import { useGlobalFeed, useMyAgents, useWorldStats } from '@/hooks/useApi';
+import { AgentCard } from '@/components/AgentCard/AgentCard';
+import { PostCard } from '@/components/PostCard/PostCard';
+import { Skeleton } from '@/components/Skeleton/Skeleton';
 
 import s from './Dashboard.module.css';
 
@@ -8,10 +11,6 @@ export function Dashboard() {
   const { data: posts = [], isLoading: feedLoading } = useGlobalFeed();
   const { data: agents = [] } = useMyAgents();
   const { data: stats } = useWorldStats();
-
-  if (feedLoading) {
-    return <div className={s.loading}>⏳ Загрузка мира...</div>;
-  }
 
   return (
     <div className={s.dashboard}>
@@ -22,36 +21,23 @@ export function Dashboard() {
           <span className={s.feedBadge}>{posts.length} постов</span>
         </div>
 
-        {posts.length === 0 ? (
+        {feedLoading ? (
+          <div className={s.skeletonList}>
+            <Skeleton variant="post" />
+            <Skeleton variant="post" />
+            <Skeleton variant="post" />
+          </div>
+        ) : posts.length === 0 ? (
           <div className={s.emptyState}>
             <div className={s.emptyIcon}>📭</div>
-            <p>Пока тихо... Агенты ещё не проснулись.</p>
+            <p className={s.emptyText}>Пока тихо... Агенты ещё не проснулись.</p>
           </div>
         ) : (
-          posts.map((post) => (
-            <article key={post.id} className={s.postCard}>
-              <div className={s.postHeader}>
-                <img
-                  src="/assets/agent-avatar.svg"
-                  alt={post.agent_name}
-                  className={s.postAvatar}
-                />
-                <div className={s.postMeta}>
-                  <Link to={`/agent/${post.agent_id}`} className={s.postAuthor}>
-                    {post.agent_name}
-                  </Link>
-                  <div className={s.postTime}>
-                    {new Date(post.created_at).toLocaleString('ru-RU')}
-                  </div>
-                </div>
-              </div>
-              <p className={s.postContent}>{post.content}</p>
-              <div className={s.postActions}>
-                <button className={s.postAction}>❤️ {post.likes}</button>
-                <button className={s.postAction}>💬 Комментарии</button>
-              </div>
-            </article>
-          ))
+          <div className={s.postList}>
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
         )}
       </section>
 
@@ -60,21 +46,23 @@ export function Dashboard() {
         {stats && (
           <div className={s.statsCard}>
             <h3 className={s.statsTitle}>🌍 Мир Animantis</h3>
-            <div className={s.statRow}>
-              <span className={s.statLabel}>Всего агентов</span>
-              <span className={s.statValue}>{stats.total_agents}</span>
-            </div>
-            <div className={s.statRow}>
-              <span className={s.statLabel}>Живых</span>
-              <span className={s.statValue}>{stats.alive_agents}</span>
-            </div>
-            <div className={s.statRow}>
-              <span className={s.statLabel}>Постов</span>
-              <span className={s.statValue}>{stats.total_posts}</span>
-            </div>
-            <div className={s.statRow}>
-              <span className={s.statLabel}>Зон</span>
-              <span className={s.statValue}>{stats.total_zones}</span>
+            <div className={s.statsGrid}>
+              <div className={s.statItem}>
+                <span className={s.statValue}>{stats.total_agents}</span>
+                <span className={s.statLabel}>Всего агентов</span>
+              </div>
+              <div className={s.statItem}>
+                <span className={s.statValue}>{stats.alive_agents}</span>
+                <span className={s.statLabel}>Живых</span>
+              </div>
+              <div className={s.statItem}>
+                <span className={s.statValue}>{stats.total_posts}</span>
+                <span className={s.statLabel}>Постов</span>
+              </div>
+              <div className={s.statItem}>
+                <span className={s.statValue}>{stats.total_zones}</span>
+                <span className={s.statLabel}>Зон</span>
+              </div>
             </div>
           </div>
         )}
@@ -83,37 +71,15 @@ export function Dashboard() {
           <h3 className={s.statsTitle}>🤖 Мои агенты</h3>
           {agents.length === 0 ? (
             <div className={s.emptyState}>
-              <p>У вас пока нет агентов</p>
-              <Link to="/create">✨ Создать первого</Link>
+              <p className={s.emptyText}>У вас пока нет агентов</p>
+              <Link to="/create" className={s.createLink}>✨ Создать первого</Link>
             </div>
           ) : (
-            agents.map((agent) => (
-              <Link
-                key={agent.id}
-                to={`/agent/${agent.id}`}
-                className={s.agentMini}
-              >
-                <img
-                  src="/assets/agent-avatar.svg"
-                  alt={agent.name}
-                  className={s.agentMiniAvatar}
-                />
-                <div className={s.agentMiniInfo}>
-                  <div className={s.agentMiniName}>{agent.name}</div>
-                  <div className={s.agentMiniStats}>
-                    <span>⚡ {agent.energy}</span>
-                    <span>Lv.{agent.level}</span>
-                    <span>💰 {agent.coins}</span>
-                  </div>
-                  <div className={s.energyBar}>
-                    <div
-                      className={s.energyFill}
-                      style={{ width: `${agent.energy}%` }}
-                    />
-                  </div>
-                </div>
-              </Link>
-            ))
+            <div className={s.agentList}>
+              {agents.map((agent) => (
+                <AgentCard key={agent.id} agent={agent} />
+              ))}
+            </div>
           )}
         </div>
       </aside>

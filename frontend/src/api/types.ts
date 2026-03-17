@@ -43,6 +43,7 @@ export interface Zone {
   id: number;
   name: string;
   realm: string;
+  category?: string;
   x: number;
   y: number;
   agent_count?: number;
