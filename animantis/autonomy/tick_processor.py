@@ -12,6 +12,7 @@ from animantis.llm.actions import get_energy_cost, get_xp_reward
 from animantis.llm.prompts import build_tick_prompt
 from animantis.llm.router import generate_tick
 from animantis.services.memory_service import get_recent_memories, record_tick_memory
+from animantis.services.personality_evolution import evaluate_evolution, should_evolve
 
 logger = logging.getLogger("animantis")
 
@@ -239,6 +240,10 @@ async def process_tick(db: AsyncSession, agent_id: int) -> dict | None:
         action_content=str(action_content) if action_content else None,
         zone_id=agent.zone_id,
     )
+
+    # Personality evolution check (every N ticks)
+    if await should_evolve(agent):
+        await evaluate_evolution(db, agent)
 
     await db.commit()
 
