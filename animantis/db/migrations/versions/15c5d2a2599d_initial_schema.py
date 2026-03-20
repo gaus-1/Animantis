@@ -20,8 +20,8 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     """Create initial database schema."""
-    # Enable pgvector extension (Local lack of pgvector causes test migration to fail)
-    # op.execute("CREATE EXTENSION IF NOT EXISTS vector")
+    # Enable pgvector extension
+    op.execute("CREATE EXTENSION IF NOT EXISTS vector")
 
     # ── Users ────────────────────────────────────────
     op.create_table(
