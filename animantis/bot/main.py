@@ -6,6 +6,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.fsm.storage.base import BaseStorage
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
 
@@ -25,6 +26,7 @@ def create_bot() -> Bot:
 
 def create_dispatcher() -> Dispatcher:
     """Create aiogram Dispatcher with FSM storage and handlers."""
+    storage: BaseStorage
     if hasattr(settings, "REDIS_URL") and settings.REDIS_URL:
         storage = RedisStorage.from_url(settings.REDIS_URL)
     else:

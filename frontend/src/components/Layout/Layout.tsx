@@ -91,7 +91,7 @@ export function Layout() {
               />
             )}
             <img
-              src="/assets/logo.svg"
+              src="/assets/logo.png"
               alt="Animantis"
               className={s.headerLogo}
             />
@@ -121,7 +121,7 @@ export function Layout() {
       <AppShell.Navbar>
         <div className={s.navbarLogo}>
           <img
-            src="/assets/logo.svg"
+            src="/assets/logo.png"
             alt="Animantis"
             className={s.logoImg}
           />

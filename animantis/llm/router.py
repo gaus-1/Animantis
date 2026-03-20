@@ -69,7 +69,7 @@ async def close_pools() -> None:
         await _http_client.aclose()
         _http_client = None
     if _redis_pool:
-        await _redis_pool.aclose()
+        await _redis_pool.disconnect()
         _redis_pool = None
     logger.info("LLM connection pools closed")
 
