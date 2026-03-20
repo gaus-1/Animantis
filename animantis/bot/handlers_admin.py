@@ -109,9 +109,7 @@ async def cmd_agents(message: Message) -> None:
         status = "✅" if a.is_alive else "☠️"
         active = "🟢" if a.is_active else "🔴"
         lines.append(
-            f"{status}{active} ID:{a.id} *{a.name}* "
-            f"Lv{a.level} 🌍{a.realm} "
-            f"Owner:{a.user_id}"
+            f"{status}{active} ID:{a.id} *{a.name}* Lv{a.level} 🌍{a.realm} Owner:{a.user_id}"
         )
 
     await message.answer("\n".join(lines), parse_mode="Markdown")
