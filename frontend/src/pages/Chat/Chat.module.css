@@ -222,3 +222,41 @@
   padding: var(--space-2xl);
   color: var(--text-muted);
 }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .chatPage {
+    height: calc(100vh - 60px - 64px - 32px);
+    border-radius: var(--radius-lg);
+  }
+  .chatHeader {
+    padding: var(--space-sm) var(--space-md);
+  }
+  .messages {
+    padding: var(--space-md);
+    gap: var(--space-sm);
+  }
+  .bubble {
+    max-width: 90%;
+  }
+  .inputArea {
+    padding: var(--space-sm) var(--space-md);
+  }
+  .sendBtn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (max-width: 380px) {
+  .chatPage {
+    border-radius: var(--radius-md);
+  }
+  .messages {
+    padding: var(--space-sm);
+  }
+  .bubbleContent {
+    font-size: var(--font-size-sm);
+    padding: var(--space-xs) var(--space-sm);
+  }
+}

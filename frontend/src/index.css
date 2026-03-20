@@ -88,6 +88,17 @@
   /* Layout */
   --sidebar-width: 260px;
   --topbar-height: 64px;
+  --bottom-nav-height: 64px;
+
+  /*
+   * Breakpoints (doc-only, CSS vars can't be used in @media):
+   *   Mobile S:   ≤ 380px   (iPhone SE, Galaxy A)
+   *   Mobile:     ≤ 480px   (iPhone 16/17, Pixel 9, Galaxy S26)
+   *   Mobile L:   ≤ 640px   (iPhone 16 Plus/Pro Max, Galaxy Ultra, folds)
+   *   Tablet:     ≤ 1024px  (iPad, Galaxy Tab, Surface Go)
+   *   Desktop:    ≤ 1440px  (laptops, FHD monitors)
+   *   Desktop XL: > 1440px  (4K, ultrawide)
+   */
 
   /* Transitions */
   --transition-fast: 0.15s ease;
@@ -176,6 +187,19 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Touch-friendly defaults */
+@media (pointer: coarse) {
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  html {
+    touch-action: manipulation;
+  }
 }
 
 body {
@@ -278,4 +302,15 @@ input:focus, textarea:focus, select:focus {
 /* ── #root ─────────────────────────────────────────────────── */
 #root {
   min-height: 100vh;
+}
+
+/* ── Global Responsive ─────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  body {
+    font-size: 0.9375rem;
+  }
+  input, textarea, select {
+    font-size: 1rem; /* prevents iOS zoom on focus */
+  }
 }

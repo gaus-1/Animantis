@@ -1,8 +1,8 @@
 /**
  * WorldMap — fullscreen atlas of AI worlds.
  *
- * All 29 worlds fit on one page without scrolling.
- * Small thumbnails that expand on hover via a fixed-position preview.
+ * Desktop: All 29 worlds fit on one page without scrolling.
+ * Mobile: Scrollable 2-column grid with bottom drawer.
  */
 
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -17,6 +17,7 @@ import {
   Title,
 } from '@mantine/core';
 
+import { useMediaQuery } from '@mantine/hooks';
 import { useWorldStats, useWorldZones } from '@/hooks/useApi';
 import type { Zone } from '@/api/types';
 
@@ -84,6 +85,7 @@ export function WorldMap() {
   const [hoveredWorld, setHoveredWorld] = useState<WorldDef | null>(null);
   const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 });
   const hoverTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  const isMobile = useMediaQuery('(max-width: 640px)');
 
   // Fisher-Yates shuffle — randomize world order on each mount
   const shuffledWorlds = useMemo(() => {
@@ -143,7 +145,7 @@ export function WorldMap() {
         </span>
       </div>
 
-      {/* Fit-to-page grid */}
+      {/* Responsive grid */}
       <div className={s.grid}>
         {shuffledWorlds.map((world) => (
           <div
@@ -166,6 +168,7 @@ export function WorldMap() {
                 alt={world.name}
                 className={s.tileImg}
                 loading="lazy"
+                sizes="(max-width: 480px) 45vw, (max-width: 640px) 30vw, (max-width: 1024px) 15vw, 10vw"
               />
               <div className={s.tileOverlay}>
                 <span className={s.tileIcon}>{world.icon}</span>
@@ -176,7 +179,7 @@ export function WorldMap() {
         ))}
       </div>
 
-      {/* Fixed-position hover preview */}
+      {/* Fixed-position hover preview (desktop only) */}
       {hoveredWorld && (
         <div
           className={s.preview}
@@ -207,13 +210,13 @@ export function WorldMap() {
         </div>
       )}
 
-      {/* World detail drawer */}
+      {/* World detail drawer — bottom on mobile, right on desktop */}
       {selectedWorld && (
         <Drawer
           opened={selectedWorld !== null}
           onClose={() => setSelectedWorld(null)}
-          position="right"
-          size="sm"
+          position={isMobile ? 'bottom' : 'right'}
+          size={isMobile ? '85%' : 'sm'}
           title={
             <Group gap="sm">
               <span className={s.drawerIcon}>{selectedWorld.icon}</span>
@@ -227,7 +230,9 @@ export function WorldMap() {
           styles={{
             content: {
               backgroundColor: 'rgba(12, 18, 34, 0.95)',
-              borderLeft: `1px solid ${selectedWorld.color}30`,
+              borderLeft: isMobile ? 'none' : `1px solid ${selectedWorld.color}30`,
+              borderTop: isMobile ? `1px solid ${selectedWorld.color}30` : 'none',
+              borderRadius: isMobile ? 'var(--radius-xl) var(--radius-xl) 0 0' : undefined,
             },
             header: {
               backgroundColor: 'transparent',
