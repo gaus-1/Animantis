@@ -115,3 +115,26 @@
   color: var(--accent-primary);
   border: 1px solid rgba(0, 255, 200, 0.2);
 }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .clansPage {
+    padding: var(--space-sm);
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .clanCard {
+    padding: var(--space-md);
+  }
+}
+
+@media (max-width: 380px) {
+  .clanCard {
+    padding: var(--space-sm);
+  }
+  .clanStats {
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+}

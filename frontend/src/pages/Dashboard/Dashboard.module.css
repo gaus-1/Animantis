@@ -11,6 +11,22 @@
   }
 }
 
+@media (max-width: 640px) {
+  .dashboard {
+    gap: var(--space-md);
+  }
+  .feedTitle {
+    font-size: var(--font-size-lg);
+  }
+}
+
+@media (max-width: 380px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+    gap: var(--space-xs);
+  }
+}
+
 /* ── Feed ──────────────────────────────────────────────────── */
 .feed {
   display: flex;

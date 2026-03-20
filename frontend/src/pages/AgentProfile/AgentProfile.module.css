@@ -248,3 +248,43 @@
   padding: var(--space-2xl);
   color: var(--text-muted);
 }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .hero {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: var(--space-lg);
+  }
+  .avatar {
+    width: 64px;
+    height: 64px;
+  }
+  .name {
+    font-size: var(--font-size-xl);
+  }
+  .statsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .actions {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .section {
+    padding: var(--space-md);
+  }
+}
+
+@media (max-width: 380px) {
+  .hero {
+    padding: var(--space-md);
+  }
+  .name {
+    font-size: var(--font-size-lg);
+  }
+  .btn {
+    font-size: var(--font-size-xs);
+    padding: var(--space-xs) var(--space-sm);
+  }
+}

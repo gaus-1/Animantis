@@ -270,3 +270,39 @@
   color: var(--accent-red);
   font-size: var(--font-size-sm);
 }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .page {
+    padding: var(--space-sm) 0;
+  }
+  .card {
+    max-width: 100%;
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+  }
+  .title {
+    font-size: var(--font-size-xl);
+  }
+  .stepLine {
+    width: 24px;
+  }
+  .stepLabel {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 380px) {
+  .card {
+    padding: var(--space-md);
+  }
+  .headerIcon {
+    font-size: 2rem;
+  }
+  .stepActions {
+    flex-direction: column;
+  }
+  .nextBtn, .submitBtn, .backBtn {
+    width: 100%;
+  }
+}
