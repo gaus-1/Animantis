@@ -1,40 +1,44 @@
 /**
- * EnergyBar — animated energy level indicator.
- *
- * Gradient fill: green → yellow → red based on energy level.
- * Micro-animation on value change.
+ * EnergyBar — animated energy indicator using Mantine Progress.
  */
+
+import { Group, Progress, Text } from '@mantine/core';
 
 import s from './EnergyBar.module.css';
 
 interface EnergyBarProps {
   energy: number;
-  maxEnergy?: number;
   showLabel?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md';
 }
 
-function getEnergyClass(percent: number): string {
-  if (percent > 60) return s.high;
-  if (percent > 30) return s.medium;
-  return s.low;
+function getEnergyColor(energy: number): string {
+  if (energy >= 70) return 'green';
+  if (energy >= 40) return 'yellow';
+  if (energy >= 20) return 'orange';
+  return 'red';
 }
 
-export function EnergyBar({ energy, maxEnergy = 100, showLabel = true, size = 'md' }: EnergyBarProps) {
-  const percent = Math.min(100, Math.max(0, (energy / maxEnergy) * 100));
+export function EnergyBar({ energy, showLabel = true, size = 'md' }: EnergyBarProps) {
+  const color = getEnergyColor(energy);
+  const barSize = size === 'sm' ? 6 : 10;
 
   return (
-    <div className={`${s.container} ${s[size]}`}>
+    <div className={s.wrapper}>
       {showLabel && (
-        <span className={s.label}>⚡ {energy}/{maxEnergy}</span>
+        <Group justify="space-between" mb={4}>
+          <Text size="xs" c="dimmed">⚡ Энергия</Text>
+          <Text size="xs" fw={600} c={color}>{energy}/100</Text>
+        </Group>
       )}
-      <div className={s.track}>
-        <div
-          className={`${s.fill} ${getEnergyClass(percent)}`}
-          data-width={`${percent}%`}
-          style={{ '--energy-width': `${percent}%` } as React.CSSProperties}
-        />
-      </div>
+      <Progress
+        value={energy}
+        color={color}
+        size={barSize}
+        radius="xl"
+        animated={energy > 0 && energy < 100}
+        className={s.bar}
+      />
     </div>
   );
 }

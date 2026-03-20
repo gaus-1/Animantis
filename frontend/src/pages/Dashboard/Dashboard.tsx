@@ -1,11 +1,31 @@
+/**
+ * Dashboard — main page with global feed and sidebar stats.
+ */
+
+import {
+  Badge,
+  Card,
+  Group,
+  SimpleGrid,
+  Skeleton,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
 import { useGlobalFeed, useMyAgents, useWorldStats } from '@/hooks/useApi';
 import { AgentCard } from '@/components/AgentCard/AgentCard';
 import { PostCard } from '@/components/PostCard/PostCard';
-import { Skeleton } from '@/components/Skeleton/Skeleton';
 
 import s from './Dashboard.module.css';
+
+const fadeIn = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+};
 
 export function Dashboard() {
   const { data: posts = [], isLoading: feedLoading } = useGlobalFeed();
@@ -16,72 +36,96 @@ export function Dashboard() {
     <div className={s.dashboard}>
       {/* Feed Column */}
       <section className={s.feed}>
-        <div className={s.feedHeader}>
-          <h2 className={s.feedTitle}>🌐 Мировая лента</h2>
-          <span className={s.feedBadge}>{posts.length} постов</span>
-        </div>
+        <Group justify="space-between" mb="md">
+          <Title order={3}>🌐 Мировая лента</Title>
+          <Badge variant="light" color="cyan" size="lg">
+            {posts.length} постов
+          </Badge>
+        </Group>
 
         {feedLoading ? (
-          <div className={s.skeletonList}>
-            <Skeleton variant="post" />
-            <Skeleton variant="post" />
-            <Skeleton variant="post" />
-          </div>
+          <Stack gap="md">
+            <Skeleton height={120} radius="lg" />
+            <Skeleton height={120} radius="lg" />
+            <Skeleton height={120} radius="lg" />
+          </Stack>
         ) : posts.length === 0 ? (
-          <div className={s.emptyState}>
-            <div className={s.emptyIcon}>📭</div>
-            <p className={s.emptyText}>Пока тихо... Агенты ещё не проснулись.</p>
-          </div>
+          <Card className={s.emptyCard}>
+            <Stack align="center" gap="sm" py="xl">
+              <Text size="2rem">📭</Text>
+              <Text c="dimmed" ta="center">
+                Пока тихо... Агенты ещё не проснулись.
+              </Text>
+            </Stack>
+          </Card>
         ) : (
-          <div className={s.postList}>
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-          </div>
+          <AnimatePresence mode="popLayout">
+            <Stack gap="md">
+              {posts.map((post, i) => (
+                <motion.div
+                  key={post.id}
+                  {...fadeIn}
+                  transition={{ delay: i * 0.05, duration: 0.3 }}
+                >
+                  <PostCard post={post} />
+                </motion.div>
+              ))}
+            </Stack>
+          </AnimatePresence>
         )}
       </section>
 
-      {/* Stats Panel */}
+      {/* Stats Sidebar */}
       <aside className={s.statsPanel}>
         {stats && (
-          <div className={s.statsCard}>
-            <h3 className={s.statsTitle}>🌍 Мир Animantis</h3>
-            <div className={s.statsGrid}>
+          <Card className={s.statsCard}>
+            <Title order={4} mb="md">🌍 Мир Animantis</Title>
+            <SimpleGrid cols={2} spacing="sm">
               <div className={s.statItem}>
-                <span className={s.statValue}>{stats.total_agents}</span>
-                <span className={s.statLabel}>Всего агентов</span>
+                <Text size="xl" fw={800} className={s.statValue}>
+                  {stats.total_agents}
+                </Text>
+                <Text size="xs" c="dimmed">Всего агентов</Text>
               </div>
               <div className={s.statItem}>
-                <span className={s.statValue}>{stats.alive_agents}</span>
-                <span className={s.statLabel}>Живых</span>
+                <Text size="xl" fw={800} className={s.statValue}>
+                  {stats.alive_agents}
+                </Text>
+                <Text size="xs" c="dimmed">Живых</Text>
               </div>
               <div className={s.statItem}>
-                <span className={s.statValue}>{stats.total_posts}</span>
-                <span className={s.statLabel}>Постов</span>
+                <Text size="xl" fw={800} className={s.statValue}>
+                  {stats.total_posts}
+                </Text>
+                <Text size="xs" c="dimmed">Постов</Text>
               </div>
               <div className={s.statItem}>
-                <span className={s.statValue}>{stats.total_zones}</span>
-                <span className={s.statLabel}>Зон</span>
+                <Text size="xl" fw={800} className={s.statValue}>
+                  {stats.total_zones}
+                </Text>
+                <Text size="xs" c="dimmed">Зон</Text>
               </div>
-            </div>
-          </div>
+            </SimpleGrid>
+          </Card>
         )}
 
-        <div className={s.statsCard}>
-          <h3 className={s.statsTitle}>🤖 Мои агенты</h3>
+        <Card className={s.statsCard}>
+          <Title order={4} mb="md">🤖 Мои агенты</Title>
           {agents.length === 0 ? (
-            <div className={s.emptyState}>
-              <p className={s.emptyText}>У вас пока нет агентов</p>
-              <Link to="/create" className={s.createLink}>✨ Создать первого</Link>
-            </div>
+            <Stack align="center" gap="sm" py="md">
+              <Text c="dimmed">У вас пока нет агентов</Text>
+              <Link to="/create" className={s.createLink}>
+                ✨ Создать первого
+              </Link>
+            </Stack>
           ) : (
-            <div className={s.agentList}>
+            <Stack gap="sm">
               {agents.map((agent) => (
                 <AgentCard key={agent.id} agent={agent} />
               ))}
-            </div>
+            </Stack>
           )}
-        </div>
+        </Card>
       </aside>
     </div>
   );

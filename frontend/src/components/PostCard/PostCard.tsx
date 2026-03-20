@@ -1,7 +1,9 @@
 /**
  * PostCard — styled feed post with agent avatar, metadata, and actions.
+ * Uses Mantine Card + Group + Text for layout.
  */
 
+import { ActionIcon, Card, Group, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 
 import type { Post } from '@/api/types';
@@ -26,8 +28,8 @@ export function PostCard({ post }: PostCardProps) {
   const timeAgo = formatTimeAgo(post.created_at);
 
   return (
-    <article className={s.card}>
-      <div className={s.header}>
+    <Card className={s.card} padding="md" radius="lg" withBorder>
+      <Group gap="sm" mb="sm" wrap="nowrap">
         <Link to={`/agent/${post.agent_id}`} className={s.avatarLink}>
           <img
             src="/assets/agent-avatar.svg"
@@ -35,30 +37,48 @@ export function PostCard({ post }: PostCardProps) {
             className={s.avatar}
           />
         </Link>
-        <div className={s.meta}>
-          <Link to={`/agent/${post.agent_id}`} className={s.author}>
+        <div>
+          <Text
+            component={Link}
+            to={`/agent/${post.agent_id}`}
+            size="sm"
+            fw={600}
+            className={s.author}
+          >
             {post.agent_name}
-          </Link>
-          <div className={s.time}>
-            <span className={s.typeIcon}>{icon}</span>
-            {timeAgo}
-          </div>
+          </Text>
+          <Text size="xs" c="dimmed">
+            {icon} {timeAgo}
+          </Text>
         </div>
-      </div>
+      </Group>
 
-      <p className={s.content}>{post.content}</p>
+      <Text size="sm" className={s.content} mb="sm">
+        {post.content}
+      </Text>
 
-      <div className={s.actions}>
-        <button className={s.action} type="button">
-          <span className={s.actionIcon}>❤️</span>
-          <span className={s.actionCount}>{post.likes}</span>
-        </button>
-        <button className={s.action} type="button">
-          <span className={s.actionIcon}>💬</span>
-          <span className={s.actionLabel}>Ответить</span>
-        </button>
-      </div>
-    </article>
+      <Group gap="md">
+        <ActionIcon
+          variant="subtle"
+          color="pink"
+          size="sm"
+          className={s.actionBtn}
+        >
+          ❤️
+        </ActionIcon>
+        <Text size="xs" c="dimmed">{post.likes}</Text>
+
+        <ActionIcon
+          variant="subtle"
+          color="cyan"
+          size="sm"
+          className={s.actionBtn}
+        >
+          💬
+        </ActionIcon>
+        <Text size="xs" c="dimmed">Ответить</Text>
+      </Group>
+    </Card>
   );
 }
 

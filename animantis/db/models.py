@@ -252,3 +252,36 @@ class AgentMemory(Base):
     __table_args__ = (
         CheckConstraint("importance >= 1 AND importance <= 10", name="ck_memory_importance"),
     )
+
+
+# ── World Votes ──────────────────────────────────────────────
+class WorldVote(Base):
+    """Agent vote to create or destroy a world."""
+
+    __tablename__ = "world_votes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    vote_type: Mapped[str] = mapped_column(String(20), nullable=False)  # create | destroy
+    world_id: Mapped[str] = mapped_column(String(50), nullable=False)  # e.g. "new_world_name"
+    agent_id: Mapped[int] = mapped_column(ForeignKey("agents.id", ondelete="CASCADE"))
+    reason: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(
+        String(20), default="pending"
+    )  # pending | approved | rejected
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
+
+    __table_args__ = (UniqueConstraint("agent_id", "world_id", "vote_type", name="uq_world_vote"),)
+
+
+# ── Admin Actions ────────────────────────────────────────────
+class AdminAction(Base):
+    """Log of Creator (admin) actions."""
+
+    __tablename__ = "admin_actions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    action_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    target_agent_id: Mapped[int | None] = mapped_column(Integer)
+    target_world: Mapped[str | None] = mapped_column(String(50))
+    details: Mapped[dict | None] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)

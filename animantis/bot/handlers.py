@@ -6,6 +6,7 @@ from aiogram import Router
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 
+from animantis.bot.handlers_admin import router as admin_router
 from animantis.bot.handlers_agents import router as agents_router
 from animantis.bot.handlers_chat import router as chat_router
 from animantis.bot.handlers_world import router as world_router
@@ -14,6 +15,7 @@ from animantis.bot.utils import _get_or_create_user, _get_user_agents, async_ses
 logger = logging.getLogger("animantis")
 
 router = Router(name="bot_handlers")
+router.include_router(admin_router)
 router.include_router(agents_router)
 router.include_router(chat_router)
 router.include_router(world_router)

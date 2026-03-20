@@ -192,6 +192,19 @@ async def process_tick(db: AsyncSession, agent_id: int) -> dict | None:
     action_data = _parse_action(llm_response.text)
     action_type = action_data.get("action", "rest")
 
+    # 5a. Creator ID protection — filter any leaks
+    from animantis.llm.prompts import protect_creator_id
+
+    for key in ("content", "text"):
+        if key in action_data and isinstance(action_data[key], str):
+            cleaned, leaked = protect_creator_id(action_data[key])
+            action_data[key] = cleaned
+            if leaked:
+                _alert_admin_id_leak(agent_id, agent.name, str(action_data.get(key, "")))
+
+    # 5b. Handle world autonomy actions
+    await _handle_autonomy_action(db, agent, action_data, action_type)
+
     # 6. Apply effects
     energy_delta = get_energy_cost(action_type)
     xp_delta = get_xp_reward(action_type)
@@ -291,3 +304,188 @@ def _parse_action(text: str) -> dict:
     except (json.JSONDecodeError, IndexError):
         logger.warning("Failed to parse LLM response", extra={"text": text[:200]})
         return {"action": "daydream", "emotion": "confused", "content": text[:200]}
+
+
+# ── World Autonomy Action Handlers ──────────────────────────
+
+
+async def _handle_autonomy_action(
+    db: AsyncSession,
+    agent: Agent,
+    action_data: dict,
+    action_type: str,
+) -> None:
+    """Handle world autonomy actions (travel, votes, scary requests)."""
+    if action_type == "travel_world":
+        await _handle_travel_world(db, agent, action_data)
+    elif action_type == "request_scary_world":
+        await _handle_scary_request(db, agent, action_data)
+    elif action_type in ("vote_create_world", "vote_destroy_world"):
+        await _handle_world_vote(db, agent, action_data, action_type)
+
+
+async def _handle_travel_world(
+    db: AsyncSession,
+    agent: Agent,
+    action_data: dict,
+) -> None:
+    """Move agent to a different world."""
+    from animantis.config.settings import settings
+
+    target_world = action_data.get("target_world")
+    if not target_world or not isinstance(target_world, str):
+        return
+
+    # Block horror worlds without permission
+    if target_world in settings.HORROR_WORLDS:
+        logger.info(
+            "Agent tried to enter horror world without permission",
+            extra={"agent_id": agent.id, "world": target_world},
+        )
+        return
+
+    # Find a zone in the target world
+    zone_q = select(Zone).where(Zone.realm == target_world).limit(1)
+    result = await db.execute(zone_q)
+    target_zone = result.scalar_one_or_none()
+
+    if target_zone:
+        agent.realm = target_world
+        agent.zone_id = target_zone.id
+        logger.info(
+            "Agent traveled to world",
+            extra={"agent_id": agent.id, "world": target_world, "zone": target_zone.name},
+        )
+    else:
+        # World exists conceptually but has no zones — just update realm
+        agent.realm = target_world
+        logger.info(
+            "Agent traveled to zoneless world",
+            extra={"agent_id": agent.id, "world": target_world},
+        )
+
+
+async def _handle_scary_request(
+    db: AsyncSession,
+    agent: Agent,
+    action_data: dict,
+) -> None:
+    """Request owner permission to visit a horror world."""
+    import asyncio
+
+    from animantis.bot.main import get_bot
+    from animantis.bot.notifications import notify_scary_request
+
+    target_world = action_data.get("target_world", "unknown")
+
+    if agent.user_id:
+        try:
+            asyncio.create_task(
+                notify_scary_request(
+                    get_bot(),
+                    agent.user_id,
+                    agent.name,
+                    str(target_world),
+                )
+            )
+        except Exception as e:
+            logger.exception("Failed to send scary world request", extra={"error": str(e)})
+
+
+async def _handle_world_vote(
+    db: AsyncSession,
+    agent: Agent,
+    action_data: dict,
+    action_type: str,
+) -> None:
+    """Record a vote for creating or destroying a world."""
+    from sqlalchemy import func
+
+    from animantis.config.settings import settings
+    from animantis.db.models import WorldVote
+
+    vote_type = "create" if action_type == "vote_create_world" else "destroy"
+    world_id = action_data.get("target_world") or action_data.get("content", "unknown")
+    reason = action_data.get("content")
+
+    if not isinstance(world_id, str):
+        world_id = str(world_id)
+
+    # Try to record vote (may fail on unique constraint = already voted)
+    try:
+        vote = WorldVote(
+            vote_type=vote_type,
+            world_id=world_id[:50],
+            agent_id=agent.id,
+            reason=str(reason)[:500] if reason else None,
+        )
+        db.add(vote)
+        await db.flush()
+
+        # Count total votes for this world+type
+        count_q = (
+            select(func.count())
+            .select_from(WorldVote)
+            .where(
+                WorldVote.world_id == world_id[:50],
+                WorldVote.vote_type == vote_type,
+                WorldVote.status == "pending",
+            )
+        )
+        count_result = await db.execute(count_q)
+        total_votes = count_result.scalar() or 0
+
+        logger.info(
+            "World vote recorded",
+            extra={
+                "agent_id": agent.id,
+                "vote_type": vote_type,
+                "world": world_id,
+                "total_votes": total_votes,
+            },
+        )
+
+        # Check threshold
+        if total_votes >= settings.WORLD_VOTE_THRESHOLD:
+            _alert_admin_world_vote(vote_type, world_id, total_votes)
+
+    except Exception as e:
+        logger.warning("Vote failed (likely duplicate)", extra={"error": str(e)})
+        await db.rollback()
+
+
+# ── Admin Alerts ─────────────────────────────────────────────
+
+
+def _alert_admin_id_leak(agent_id: int, agent_name: str, context: str) -> None:
+    """Alert Creator that an agent leaked the admin ID."""
+    import asyncio
+
+    from animantis.bot.main import get_bot
+    from animantis.bot.notifications import notify_admin_id_leak
+    from animantis.config.settings import settings
+
+    if settings.ADMIN_TELEGRAM:
+        try:
+            asyncio.create_task(
+                notify_admin_id_leak(get_bot(), agent_id, agent_name, context[:200])
+            )
+        except Exception as e:
+            logger.exception("Failed to alert admin about ID leak", extra={"error": str(e)})
+
+
+def _alert_admin_world_vote(vote_type: str, world_id: str, total_votes: int) -> None:
+    """Alert Creator about a world vote reaching threshold."""
+    import asyncio
+
+    from animantis.bot.main import get_bot
+    from animantis.bot.notifications import notify_admin_world_vote
+    from animantis.config.settings import settings
+
+    if settings.ADMIN_TELEGRAM:
+        try:
+            asyncio.create_task(
+                notify_admin_world_vote(get_bot(), vote_type, world_id, total_votes)
+            )
+        except Exception as e:
+            logger.exception("Failed to alert admin about world vote", extra={"error": str(e)})

@@ -109,6 +109,16 @@ ALLOWED_ACTIONS: list[str] = [
     "celebrate",
     "mourn",
     "daydream",
+    # World Autonomy
+    "travel_world",
+    "request_scary_world",
+    "vote_create_world",
+    "vote_destroy_world",
+    "create_law",
+    "create_court",
+    "create_language",
+    "elect_leader",
+    "impeach",
 ]
 
 
@@ -216,6 +226,16 @@ ACTION_ENERGY: dict[str, int] = {
     # State
     "celebrate": -5,
     "mourn": -5,
+    # World Autonomy
+    "travel_world": -25,
+    "request_scary_world": -5,
+    "vote_create_world": -10,
+    "vote_destroy_world": -10,
+    "create_law": -20,
+    "create_court": -25,
+    "create_language": -30,
+    "elect_leader": -15,
+    "impeach": -20,
 }
 
 
@@ -316,6 +336,16 @@ ACTION_XP: dict[str, int] = {
     "celebrate": 10,
     "mourn": 10,
     "meditate": 10,
+    # World Autonomy
+    "travel_world": 35,
+    "request_scary_world": 10,
+    "vote_create_world": 20,
+    "vote_destroy_world": 20,
+    "create_law": 40,
+    "create_court": 45,
+    "create_language": 50,
+    "elect_leader": 30,
+    "impeach": 30,
 }
 
 

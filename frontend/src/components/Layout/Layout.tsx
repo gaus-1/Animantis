@@ -1,14 +1,41 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+/**
+ * Layout — main application shell with responsive sidebar and mobile bottom nav.
+ *
+ * Uses Mantine AppShell for structure:
+ * - Desktop: fixed sidebar (260px) + top header
+ * - Tablet: collapsible sidebar via burger menu
+ * - Mobile: bottom navigation bar, no sidebar
+ */
+
+import { useCallback } from 'react';
+
+import {
+  AppShell,
+  Burger,
+  Group,
+  Text,
+  UnstyledButton,
+} from '@mantine/core';
+import { useDisclosure, useMediaQuery } from '@mantine/hooks';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import s from './Layout.module.css';
 
-const NAV_ITEMS = [
-  { path: '/', icon: '🏠', label: 'Dashboard' },
-  { path: '/agents', icon: '🤖', label: 'Мои агенты' },
-  { path: '/create', icon: '✨', label: 'Создать агента' },
-  { path: '/map', icon: '🗺️', label: 'Карта мира' },
-  { path: '/feed', icon: '📰', label: 'Лента' },
-  { path: '/clans', icon: '⚔️', label: 'Кланы' },
+/* ── Navigation items ──────────────────────────────────────── */
+
+interface NavItem {
+  path: string;
+  icon: string;
+  label: string;
+  shortLabel: string;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { path: '/', icon: '🏠', label: 'Dashboard', shortLabel: 'Home' },
+  { path: '/create', icon: '✨', label: 'Создать агента', shortLabel: 'Создать' },
+  { path: '/map', icon: '🗺️', label: 'Карта мира', shortLabel: 'Карта' },
+  { path: '/feed', icon: '📰', label: 'Лента', shortLabel: 'Лента' },
+  { path: '/clans', icon: '⚔️', label: 'Кланы', shortLabel: 'Кланы' },
 ];
 
 function getPageTitle(pathname: string): string {
@@ -17,25 +44,88 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/agent/')) return 'Профиль агента';
   if (pathname.startsWith('/chat/')) return 'Чат с агентом';
   if (pathname === '/settings') return 'Настройки';
-  if (pathname === '/feed') return 'Лента';
+  if (pathname === '/agents') return 'Мои агенты';
   return 'Animantis';
 }
 
+/* ── Component ─────────────────────────────────────────────── */
+
 export function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const title = getPageTitle(location.pathname);
+  const [sidebarOpened, { toggle: toggleSidebar, close: closeSidebar }] = useDisclosure(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
+  const handleNavClick = useCallback((path: string) => {
+    navigate(path);
+    closeSidebar();
+  }, [navigate, closeSidebar]);
 
   return (
-    <div className={s.layout}>
-      {/* Sidebar */}
-      <aside className={s.sidebar}>
-        <div className={s.sidebarLogo}>
+    <AppShell
+      header={{ height: 60 }}
+      navbar={{
+        width: 260,
+        breakpoint: 'sm',
+        collapsed: { mobile: !sidebarOpened },
+      }}
+      padding="md"
+      classNames={{
+        root: s.shell,
+        header: s.header,
+        navbar: s.navbar,
+        main: s.main,
+      }}
+    >
+      {/* ── Header ──────────────────────────────────────────── */}
+      <AppShell.Header>
+        <Group h="100%" px="md" justify="space-between">
+          <Group gap="sm">
+            {!isMobile ? null : (
+              <Burger
+                opened={sidebarOpened}
+                onClick={toggleSidebar}
+                size="sm"
+                color="var(--text-secondary)"
+              />
+            )}
+            <img
+              src="/assets/logo.svg"
+              alt="Animantis"
+              className={s.headerLogo}
+            />
+            <Text fw={700} size="lg" className={s.headerTitle}>
+              {title}
+            </Text>
+          </Group>
+          <Group gap="xs">
+            <UnstyledButton
+              className={s.headerBtn}
+              title="Уведомления"
+            >
+              🔔
+            </UnstyledButton>
+            <UnstyledButton
+              className={s.headerBtn}
+              title="Настройки"
+              onClick={() => handleNavClick('/settings')}
+            >
+              ⚙️
+            </UnstyledButton>
+          </Group>
+        </Group>
+      </AppShell.Header>
+
+      {/* ── Sidebar ─────────────────────────────────────────── */}
+      <AppShell.Navbar>
+        <div className={s.navbarLogo}>
           <img
             src="/assets/logo.svg"
             alt="Animantis"
-            className={s.sidebarLogoImg}
+            className={s.logoImg}
           />
-          <span className={s.sidebarLogoText}>Animantis</span>
+          <span className={s.logoText}>Animantis</span>
         </div>
 
         <nav className={s.nav}>
@@ -47,6 +137,7 @@ export function Layout() {
                 `${s.navItem} ${isActive ? s.navItemActive : ''}`
               }
               end={item.path === '/'}
+              onClick={closeSidebar}
             >
               <span className={s.navIcon}>{item.icon}</span>
               {item.label}
@@ -54,26 +145,38 @@ export function Layout() {
           ))}
         </nav>
 
-        <div className={s.sidebarFooter}>Animantis v0.1.0</div>
-      </aside>
-
-      {/* TopBar */}
-      <header className={s.topbar}>
-        <h1 className={s.topbarTitle}>{title}</h1>
-        <div className={s.topbarActions}>
-          <button className={s.topbarBtn} title="Уведомления">
-            🔔
-          </button>
-          <NavLink to="/settings" className={s.topbarBtn} title="Настройки">
-            ⚙️
-          </NavLink>
+        <div className={s.navbarFooter}>
+          <span className={s.statusDot} />
+          Animantis v0.2.0
         </div>
-      </header>
+      </AppShell.Navbar>
 
-      {/* Main content */}
-      <main className={s.main}>
+      {/* ── Main content ────────────────────────────────────── */}
+      <AppShell.Main>
         <Outlet />
-      </main>
-    </div>
+      </AppShell.Main>
+
+      {/* ── Mobile bottom navigation ────────────────────────── */}
+      {isMobile && (
+        <div className={s.bottomNav}>
+          {NAV_ITEMS.map((item) => {
+            const isActive = item.path === '/'
+              ? location.pathname === '/'
+              : location.pathname.startsWith(item.path);
+            return (
+              <button
+                key={item.path}
+                type="button"
+                className={`${s.bottomNavItem} ${isActive ? s.bottomNavItemActive : ''}`}
+                onClick={() => handleNavClick(item.path)}
+              >
+                <span className={s.bottomNavIcon}>{item.icon}</span>
+                <span className={s.bottomNavLabel}>{item.shortLabel}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </AppShell>
   );
 }

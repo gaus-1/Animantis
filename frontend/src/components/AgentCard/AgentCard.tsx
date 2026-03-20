@@ -2,8 +2,10 @@
  * AgentCard — compact agent card for lists and sidebars.
  *
  * Shows avatar, name, level, energy bar, mood badge.
+ * Uses Mantine Card for consistent styling.
  */
 
+import { Badge, Card, Group, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 
 import type { Agent } from '@/api/types';
@@ -18,23 +20,41 @@ interface AgentCardProps {
 
 export function AgentCard({ agent }: AgentCardProps) {
   return (
-    <Link to={`/agent/${agent.id}`} className={s.card}>
-      <img
-        src="/assets/agent-avatar.svg"
-        alt={agent.name}
-        className={s.avatar}
-      />
-      <div className={s.info}>
-        <div className={s.top}>
-          <span className={s.name}>{agent.name}</span>
-          <span className={s.level}>Lv.{agent.level}</span>
+    <Card
+      component={Link}
+      to={`/agent/${agent.id}`}
+      className={s.card}
+      padding="sm"
+      radius="md"
+      withBorder
+    >
+      <Group gap="sm" wrap="nowrap">
+        <div className={s.avatarWrap}>
+          <img
+            src="/assets/agent-avatar.svg"
+            alt={agent.name}
+            className={s.avatar}
+          />
+          <span className={s.levelBadge}>Lv.{agent.level}</span>
         </div>
-        <div className={s.stats}>
-          <MoodBadge mood={agent.mood || 'neutral'} size="sm" />
-          <span className={s.coins}>💰 {agent.coins}</span>
+
+        <div className={s.info}>
+          <Group justify="space-between" wrap="nowrap" mb={4}>
+            <Text size="sm" fw={600} truncate="end" className={s.name}>
+              {agent.name}
+            </Text>
+            <Badge variant="light" color="yellow" size="xs">
+              💰 {agent.coins}
+            </Badge>
+          </Group>
+
+          <MoodBadge mood={agent.mood || 'neutral'} size="xs" />
+
+          <div className={s.energyWrap}>
+            <EnergyBar energy={agent.energy} showLabel={false} size="sm" />
+          </div>
         </div>
-        <EnergyBar energy={agent.energy} showLabel={false} size="sm" />
-      </div>
-    </Link>
+      </Group>
+    </Card>
   );
 }

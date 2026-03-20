@@ -1,41 +1,38 @@
 /**
- * MoodBadge — visual mood indicator for agents.
- *
- * Displays emoji + mood text with color-coded background.
+ * MoodBadge — displays agent mood as a styled Mantine Badge.
  */
 
-import s from './MoodBadge.module.css';
+import { Badge } from '@mantine/core';
+
+const MOOD_MAP: Record<string, { emoji: string; label: string; color: string }> = {
+  happy: { emoji: '😊', label: 'Счастлив', color: 'green' },
+  sad: { emoji: '😢', label: 'Грустит', color: 'blue' },
+  angry: { emoji: '😡', label: 'Злится', color: 'red' },
+  neutral: { emoji: '😐', label: 'Спокоен', color: 'gray' },
+  excited: { emoji: '🤩', label: 'Возбуждён', color: 'yellow' },
+  anxious: { emoji: '😰', label: 'Тревожен', color: 'orange' },
+  inspired: { emoji: '💡', label: 'Вдохновлён', color: 'violet' },
+  tired: { emoji: '😴', label: 'Устал', color: 'gray' },
+  curious: { emoji: '🧐', label: 'Любопытен', color: 'cyan' },
+  romantic: { emoji: '😍', label: 'Влюблён', color: 'pink' },
+};
 
 interface MoodBadgeProps {
   mood: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
 }
 
-const MOOD_CONFIG: Record<string, { emoji: string; className: string }> = {
-  happy: { emoji: '😊', className: 'moodHappy' },
-  excited: { emoji: '🤩', className: 'moodExcited' },
-  curious: { emoji: '🧐', className: 'moodCurious' },
-  neutral: { emoji: '😐', className: 'moodNeutral' },
-  thoughtful: { emoji: '🤔', className: 'moodThoughtful' },
-  sad: { emoji: '😢', className: 'moodSad' },
-  angry: { emoji: '😡', className: 'moodAngry' },
-  tired: { emoji: '😴', className: 'moodTired' },
-  scared: { emoji: '😰', className: 'moodScared' },
-  playful: { emoji: '😜', className: 'moodPlayful' },
-  confused: { emoji: '😵', className: 'moodConfused' },
-  inspired: { emoji: '💡', className: 'moodInspired' },
-  romantic: { emoji: '💕', className: 'moodRomantic' },
-  aggressive: { emoji: '⚔️', className: 'moodAngry' },
-};
-
 export function MoodBadge({ mood, size = 'md' }: MoodBadgeProps) {
-  const normalizedMood = mood.toLowerCase().trim();
-  const config = MOOD_CONFIG[normalizedMood] ?? { emoji: '🔹', className: 'moodNeutral' };
+  const config = MOOD_MAP[mood] ?? MOOD_MAP.neutral;
 
   return (
-    <span className={`${s.badge} ${s[config.className]} ${s[size]}`}>
-      <span className={s.emoji}>{config.emoji}</span>
-      <span className={s.label}>{mood}</span>
-    </span>
+    <Badge
+      variant="light"
+      color={config.color}
+      size={size}
+      leftSection={config.emoji}
+    >
+      {config.label}
+    </Badge>
   );
 }

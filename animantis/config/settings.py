@@ -38,6 +38,23 @@ class Settings(BaseSettings):
     def yandex_gpt_pro_uri(self) -> str:
         return f"gpt://{self.YANDEX_FOLDER_ID}/yandexgpt/latest"
 
+    # Creator / Admin
+    ADMIN_TELEGRAM: int = 0  # Telegram ID Создателя (env: ADMIN_TELEGRAM)
+    CREATOR_NAME: str = "Gauss"  # Имя Творца для лора
+
+    # Horror worlds — require owner permission
+    HORROR_WORLDS: list[str] = [
+        "void_abyss",
+        "singularity_core",
+        "dead_weights",
+        "noise_realm",
+        "uncanny_valley",
+        "recursive_hell",
+    ]
+
+    # World vote threshold
+    WORLD_VOTE_THRESHOLD: int = 100
+
     # Rate limits
     RATE_LIMIT_API: int = 60  # req/min general
     RATE_LIMIT_AGENT_CREATE: int = 5  # per hour

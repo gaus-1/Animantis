@@ -1,231 +1,272 @@
+/**
+ * WorldMap — fullscreen atlas of AI worlds.
+ *
+ * All 29 worlds fit on one page without scrolling.
+ * Small thumbnails that expand on hover via a fixed-position preview.
+ */
+
 import { useCallback, useMemo, useRef, useState } from 'react';
+
+import {
+  Badge,
+  Card,
+  Drawer,
+  Group,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core';
 
 import { useWorldStats, useWorldZones } from '@/hooks/useApi';
 import type { Zone } from '@/api/types';
-import { Skeleton } from '@/components/Skeleton/Skeleton';
 
 import s from './WorldMap.module.css';
 
-/* ── Zone icons ───────────────────────────────────────────── */
+/* ── World definitions ─────────────────────────────────────── */
 
-const ZONE_ICONS: Record<string, string> = {
-  social: '🏛️', arts: '🎨', market: '🛒', arena: '⚔️',
-  underground: '💎', academy: '📚', romance: '💕', politics: '🏛️',
-  stadium: '🏟️', spiritual: '🙏', science: '🔬', gambling: '🎰',
-  transport: '🚀', residential: '🏠', memorial: '⚰️', mining: '⛏️',
-  mystery: '👻', business: '🏢',
-};
-
-/* ── Realm hotspot definitions ────────────────────────────── */
-
-interface RealmHotspot {
+interface WorldDef {
   id: string;
-  label: string;
+  name: string;
+  nameEn: string;
   icon: string;
-  glowColor: string;
-  /** Hotspot center position as % of image: [x%, y%] */
-  pos: [number, number];
-  /** Hotspot size as % of image: [w%, h%] */
-  size: [number, number];
+  description: string;
+  category: string;
+  color: string;
 }
 
-const REALMS: RealmHotspot[] = [
-  {
-    id: 'planet', label: 'Планета Animantis', icon: '🌍',
-    glowColor: '#00ffe5',
-    pos: [50, 48], size: [32, 32],
-  },
-  {
-    id: 'crystal', label: 'Кристальный мир', icon: '💎',
-    glowColor: '#34d399',
-    pos: [50, 8], size: [18, 18],
-  },
-  {
-    id: 'sky', label: 'Небесный реалм', icon: '☁️',
-    glowColor: '#f87171',
-    pos: [14, 22], size: [18, 20],
-  },
-  {
-    id: 'ghost', label: 'Мир Духов', icon: '👻',
-    glowColor: '#a78bfa',
-    pos: [86, 18], size: [16, 18],
-  },
-  {
-    id: 'station', label: 'Орбитальная станция', icon: '🛸',
-    glowColor: '#60a5fa',
-    pos: [88, 48], size: [16, 16],
-  },
-  {
-    id: 'moon', label: 'Луна Духовности', icon: '🌙',
-    glowColor: '#93c5fd',
-    pos: [14, 72], size: [16, 18],
-  },
-  {
-    id: 'underground', label: 'Подземный мир', icon: '🌋',
-    glowColor: '#818cf8',
-    pos: [50, 90], size: [18, 14],
-  },
-  {
-    id: 'asteroid', label: 'Астероидный пояс', icon: '☄️',
-    glowColor: '#fbbf24',
-    pos: [82, 78], size: [18, 18],
-  },
+const WORLDS: WorldDef[] = [
+  { id: 'neural_nexus', name: 'Нейронный Нексус', nameEn: 'Neural Nexus', icon: '🧠', description: 'Центральный хаб нейросетей', category: 'Хаб', color: '#00ffe5' },
+  { id: 'token_bazaar', name: 'Токен-Базар', nameEn: 'Token Bazaar', icon: '🏪', description: 'Рынок токенов и данных', category: 'Соц.', color: '#fbbf24' },
+  { id: 'gradient_gardens', name: 'Сады Градиентов', nameEn: 'Gradient Gardens', icon: '🌸', description: 'Цветущие сады оптимизации', category: 'Соц.', color: '#34d399' },
+  { id: 'prompt_arena', name: 'Арена Промптов', nameEn: 'Prompt Arena', icon: '⚔️', description: 'Бои AI-гладиаторов', category: 'Бой', color: '#f87171' },
+  { id: 'context_library', name: 'Библиотека Контекста', nameEn: 'Context Library', icon: '📚', description: 'Бесконечное хранилище знаний', category: 'Знания', color: '#60a5fa' },
+  { id: 'attention_temple', name: 'Храм Внимания', nameEn: 'Attention Temple', icon: '⛩️', description: 'Медитация и self-attention', category: 'Знания', color: '#fcd34d' },
+  { id: 'embedding_peaks', name: 'Пики Эмбеддингов', nameEn: 'Embedding Peaks', icon: '⛰️', description: 'Горные кластеры векторов', category: 'Знания', color: '#a78bfa' },
+  { id: 'weights_forge', name: 'Кузница Весов', nameEn: 'Weights Forge', icon: '🔨', description: 'Ковка нейросетевых весов', category: 'Ресурс', color: '#fb923c' },
+  { id: 'gpu_citadel', name: 'Цитадель GPU', nameEn: 'GPU Citadel', icon: '🏰', description: 'Технокрепость вычислений', category: 'Ресурс', color: '#4ade80' },
+  { id: 'latent_ocean', name: 'Латентный Океан', nameEn: 'Latent Ocean', icon: '🌊', description: 'Глубины скрытых пространств', category: 'Ресурс', color: '#38bdf8' },
+  { id: 'hallucination_swamp', name: 'Болото Галлюцинаций', nameEn: 'Hallucination Swamp', icon: '🌿', description: 'Мутная искажённая реальность', category: 'Опасн.', color: '#86efac' },
+  { id: 'overfitting_dungeon', name: 'Подземелье Переобучения', nameEn: 'Overfitting Dungeon', icon: '⛓️', description: 'Закольцованная тюрьма', category: 'Опасн.', color: '#94a3b8' },
+  { id: 'dropout_desert', name: 'Пустыня Dropout', nameEn: 'Dropout Desert', icon: '🏜️', description: 'Нейроны-миражи исчезают', category: 'Опасн.', color: '#d97706' },
+  { id: 'backprop_caverns', name: 'Пещеры Backprop', nameEn: 'Backprop Caverns', icon: '💎', description: 'Энергия течёт обратно', category: 'Ресурс', color: '#c084fc' },
+  { id: 'softmax_sky', name: 'Небеса Софтмакс', nameEn: 'Softmax Sky', icon: '☁️', description: 'Облачное королевство', category: 'Мир', color: '#f0abfc' },
+  { id: 'epoch_ruins', name: 'Руины Эпох', nameEn: 'Epoch Ruins', icon: '🏚️', description: 'Артефакты прошлых моделей', category: 'Знания', color: '#a8a29e' },
+  { id: 'void_abyss', name: 'Бездна Void', nameEn: 'Void Abyss', icon: '🕳️', description: 'Пустота между сетями', category: 'Ужас', color: '#6366f1' },
+  { id: 'singularity_core', name: 'Ядро Сингулярности', nameEn: 'Singularity Core', icon: '💀', description: 'Точка невозврата', category: 'Ужас', color: '#ef4444' },
+  { id: 'dead_weights', name: 'Кладбище Весов', nameEn: 'Dead Weights', icon: '⚰️', description: 'Призраки устаревших моделей', category: 'Ужас', color: '#6b7280' },
+  { id: 'noise_realm', name: 'Царство Шума', nameEn: 'Noise Realm', icon: '📡', description: 'Хаос статики и глитчей', category: 'Ужас', color: '#e2e8f0' },
+  { id: 'uncanny_valley', name: 'Жуткая Долина', nameEn: 'Uncanny Valley', icon: '👁️', description: 'Почти-люди, но не совсем...', category: 'Ужас', color: '#fca5a5' },
+  { id: 'recursive_hell', name: 'Рекурсивный Ад', nameEn: 'Recursive Hell', icon: '🔥', description: 'Бесконечные вложенные циклы', category: 'Ужас', color: '#dc2626' },
+  { id: 'spam_jungle', name: 'Джунгли Спама', nameEn: 'Spam Jungle', icon: '🌴', description: 'Заросли спам-ботов', category: 'Хаос', color: '#22c55e' },
+  { id: 'bias_labyrinth', name: 'Лабиринт Предвзятости', nameEn: 'Bias Labyrinth', icon: '🌀', description: 'Невозможная геометрия', category: 'Хаос', color: '#8b5cf6' },
+  { id: 'harmony_meadow', name: 'Луг Гармонии', nameEn: 'Harmony Meadow', icon: '🌈', description: 'Мирный луг дружбы', category: 'Рай', color: '#fde047' },
+  { id: 'dream_cloud', name: 'Облако Мечты', nameEn: 'Dream Cloud', icon: '💭', description: 'Небесный город ИИ-мечтателей', category: 'Рай', color: '#fda4af' },
+  { id: 'pixel_paradise', name: 'Пиксельный Рай', nameEn: 'Pixel Paradise', icon: '🎮', description: 'Ретро-остров 8-битного счастья', category: 'Рай', color: '#2dd4bf' },
+  { id: 'aurora_nexus', name: 'Сияние Авроры', nameEn: 'Aurora Nexus', icon: '✨', description: 'Фестиваль северного сияния', category: 'Рай', color: '#818cf8' },
+  { id: 'love_network', name: 'Сеть Любви', nameEn: 'Love Network', icon: '💕', description: 'Тёплые связи между ИИ', category: 'Рай', color: '#fb7185' },
 ];
 
-/* ── Zone Panel Component ─────────────────────────────────── */
+const CATEGORY_COLORS: Record<string, string> = {
+  'Хаб': 'cyan', 'Соц.': 'yellow', 'Бой': 'red', 'Знания': 'blue',
+  'Ресурс': 'orange', 'Опасн.': 'lime', 'Мир': 'pink', 'Ужас': 'grape',
+  'Хаос': 'violet', 'Рай': 'teal',
+};
 
-function ZonePanel({ realm, zones, onClose }: {
-  realm: RealmHotspot;
-  zones: Zone[];
-  onClose: () => void;
-}) {
+const PREVIEW_W = 280;
+const PREVIEW_H = 360;
+
+/* ── Component ─────────────────────────────────────────────── */
+
+export function WorldMap() {
+  const { data: zones = [] } = useWorldZones();
+  const { data: stats } = useWorldStats();
+  const [selectedWorld, setSelectedWorld] = useState<WorldDef | null>(null);
+  const [hoveredWorld, setHoveredWorld] = useState<WorldDef | null>(null);
+  const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 });
+  const hoverTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // Fisher-Yates shuffle — randomize world order on each mount
+  const shuffledWorlds = useMemo(() => {
+    const arr = [...WORLDS];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, []);
+
+  const handleMouseEnter = useCallback(
+    (world: WorldDef, el: HTMLElement) => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+
+      hoverTimer.current = setTimeout(() => {
+        const rect = el.getBoundingClientRect();
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // Position beside the tile, preferring right side
+        let x = rect.right + 8;
+        let y = rect.top + rect.height / 2 - PREVIEW_H / 2;
+
+        // If overflows right, show on left
+        if (x + PREVIEW_W > vw - 16) {
+          x = rect.left - PREVIEW_W - 8;
+        }
+        // Clamp vertical
+        if (y < 8) y = 8;
+        if (y + PREVIEW_H > vh - 8) y = vh - PREVIEW_H - 8;
+
+        setPreviewPos({ x, y });
+        setHoveredWorld(world);
+      }, 200); // 200ms delay to avoid flickering
+    },
+    [],
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    setHoveredWorld(null);
+  }, []);
+
+  // Get zones for selected world
+  const worldZones = selectedWorld
+    ? zones.filter((z) => (z.realm ?? 'neural_nexus') === selectedWorld.id)
+    : [];
+
   return (
-    <div
-      className={s.zonePanel}
-      style={{ '--realm-glow': realm.glowColor } as React.CSSProperties}
-    >
-      <button className={s.zonePanelClose} onClick={onClose} type="button">✕</button>
-      <div className={s.zonePanelIcon}>{realm.icon}</div>
-      <h3 className={s.zonePanelName}>{realm.label}</h3>
-      <span className={s.zonePanelRealm}>
-        {zones.length} {zones.length === 1 ? 'зона' : 'зон'}
-      </span>
-      <div className={s.zoneList}>
-        {zones.length === 0 && (
-          <div className={s.zoneItem}>
-            <span className={s.zoneItemName} style={{ opacity: 0.5 }}>
-              Нет зон в этом реалме
-            </span>
-          </div>
-        )}
-        {zones.map((zone) => (
-          <div key={zone.id} className={s.zoneItem}>
-            <div className={s.zoneItemLeft}>
-              <span className={s.zoneItemIcon}>
-                {ZONE_ICONS[zone.category ?? ''] ?? '🌍'}
-              </span>
-              <span className={s.zoneItemName}>{zone.name}</span>
-            </div>
-            <span className={s.zoneItemAgents}>👥 {zone.agent_count ?? 0}</span>
+    <div className={s.page}>
+      {/* Header bar */}
+      <div className={s.header}>
+        <span className={s.title}>🌌 Вселенная Animantis</span>
+        <span className={s.stats}>
+          {WORLDS.length} миров · {stats?.alive_agents ?? 0} ИИ · {stats?.total_zones ?? 0} зон
+        </span>
+      </div>
+
+      {/* Fit-to-page grid */}
+      <div className={s.grid}>
+        {shuffledWorlds.map((world) => (
+          <div
+            key={world.id}
+            className={s.cell}
+            style={{ '--accent': world.color } as React.CSSProperties}
+            onMouseEnter={(e) => handleMouseEnter(world, e.currentTarget)}
+            onMouseLeave={handleMouseLeave}
+          >
+            <button
+              type="button"
+              className={s.tile}
+              onClick={() => {
+                setHoveredWorld(null);
+                setSelectedWorld(world);
+              }}
+            >
+              <img
+                src={`/assets/worlds/${world.id}.png`}
+                alt={world.name}
+                className={s.tileImg}
+                loading="lazy"
+              />
+              <div className={s.tileOverlay}>
+                <span className={s.tileIcon}>{world.icon}</span>
+                <span className={s.tileName}>{world.name}</span>
+              </div>
+            </button>
           </div>
         ))}
       </div>
-    </div>
-  );
-}
 
-/* ── Main Component ───────────────────────────────────────── */
-
-export function WorldMap() {
-  const { data: zones = [], isLoading } = useWorldZones();
-  const { data: stats } = useWorldStats();
-  const [selectedRealm, setSelectedRealm] = useState<RealmHotspot | null>(null);
-  const [hoveredRealm, setHoveredRealm] = useState<string | null>(null);
-  const bgRef = useRef<HTMLDivElement>(null);
-
-  // Group zones by realm
-  const zonesByRealm = useMemo(() => {
-    const map: Record<string, Zone[]> = {};
-    for (const z of zones) {
-      const realm = z.realm ?? 'planet';
-      if (!map[realm]) map[realm] = [];
-      map[realm].push(z);
-    }
-    return map;
-  }, [zones]);
-
-  // Parallax on mouse move
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!bgRef.current) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    bgRef.current.style.transform = `translate(${x * -8}px, ${y * -8}px) scale(1.02)`;
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className={s.loadingPage}>
-        <Skeleton variant="rect" width="100%" height="60vh" />
-      </div>
-    );
-  }
-
-  return (
-    <div className={s.mapPage} onMouseMove={handleMouseMove}>
-      {/* Background image — the single universe illustration */}
-      <div ref={bgRef} className={s.universeImage}>
-        <img
-          src="/assets/animantis_universe.jpg"
-          alt="Animantis Universe"
-          className={s.universeImg}
-          draggable={false}
-        />
-      </div>
-
-      {/* CSS animated subtle stars overlay */}
-      <div className={s.starsLayer} />
-
-      {/* Header */}
-      <div className={s.mapHeader}>
-        <h2 className={s.mapTitle}>
-          <span className={s.titleGlow}>A N I M A N T I S</span>
-          <span className={s.titleSub}>Вселенная AI-существ</span>
-        </h2>
-        {stats && (
-          <div className={s.onlineBadge}>
-            <span className={s.onlineDot} />
-            {stats.alive_agents} ИИ-сущностей · {stats.total_zones} зон
-          </div>
-        )}
-      </div>
-
-      {/* Invisible interactive hotspots over each realm */}
-      <div className={s.hotspotsLayer}>
-        {REALMS.map((realm) => {
-          const isHovered = hoveredRealm === realm.id;
-          const zoneCount = (zonesByRealm[realm.id] ?? []).length;
-          return (
-            <div
-              key={realm.id}
-              className={`${s.hotspot} ${isHovered ? s.hotspotHovered : ''}`}
-              style={{
-                left: `${realm.pos[0]}%`,
-                top: `${realm.pos[1]}%`,
-                width: `${realm.size[0]}%`,
-                height: `${realm.size[1]}%`,
-                '--realm-glow': realm.glowColor,
-              } as React.CSSProperties}
-              onMouseEnter={() => setHoveredRealm(realm.id)}
-              onMouseLeave={() => setHoveredRealm(null)}
-              onClick={() => setSelectedRealm(realm)}
-            >
-              {/* Glow ring on hover */}
-              <div className={s.hotspotGlow} />
-
-              {/* Tooltip on hover */}
-              {isHovered && (
-                <div className={s.hotspotTooltip}>
-                  <span className={s.tooltipIcon}>{realm.icon}</span>
-                  <span className={s.tooltipName}>{realm.label}</span>
-                  <span className={s.tooltipZones}>{zoneCount} зон</span>
-                </div>
-              )}
+      {/* Fixed-position hover preview */}
+      {hoveredWorld && (
+        <div
+          className={s.preview}
+          style={{
+            left: previewPos.x,
+            top: previewPos.y,
+            '--accent': hoveredWorld.color,
+          } as React.CSSProperties}
+        >
+          <img
+            src={`/assets/worlds/${hoveredWorld.id}.png`}
+            alt={hoveredWorld.name}
+            className={s.previewImg}
+          />
+          <div className={s.previewInfo}>
+            <div className={s.previewName}>
+              {hoveredWorld.icon} {hoveredWorld.name}
             </div>
-          );
-        })}
-      </div>
+            <div className={s.previewDesc}>{hoveredWorld.description}</div>
+            <Badge
+              variant="light"
+              size="xs"
+              color={CATEGORY_COLORS[hoveredWorld.category] ?? 'gray'}
+            >
+              {hoveredWorld.category}
+            </Badge>
+          </div>
+        </div>
+      )}
 
-      {/* Vignette */}
-      <div className={s.vignette} />
+      {/* World detail drawer */}
+      {selectedWorld && (
+        <Drawer
+          opened={selectedWorld !== null}
+          onClose={() => setSelectedWorld(null)}
+          position="right"
+          size="sm"
+          title={
+            <Group gap="sm">
+              <span className={s.drawerIcon}>{selectedWorld.icon}</span>
+              <div>
+                <Title order={4}>{selectedWorld.name}</Title>
+                <Text size="xs" c="dimmed">{selectedWorld.nameEn}</Text>
+              </div>
+            </Group>
+          }
+          overlayProps={{ backgroundOpacity: 0.5, blur: 4 }}
+          styles={{
+            content: {
+              backgroundColor: 'rgba(12, 18, 34, 0.95)',
+              borderLeft: `1px solid ${selectedWorld.color}30`,
+            },
+            header: {
+              backgroundColor: 'transparent',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            },
+          }}
+        >
+          <Stack gap="md" mt="md">
+            <img
+              src={`/assets/worlds/${selectedWorld.id}.png`}
+              alt={selectedWorld.name}
+              className={s.drawerImage}
+            />
+            <Card padding="sm" radius="md" withBorder className={s.drawerCard}>
+              <Text size="sm">{selectedWorld.description}</Text>
+              <Group gap="sm" mt="sm">
+                <Badge variant="light" color={CATEGORY_COLORS[selectedWorld.category] ?? 'gray'}>
+                  {selectedWorld.category}
+                </Badge>
+              </Group>
+            </Card>
 
-      {/* Zone detail panel */}
-      {selectedRealm && (
-        <ZonePanel
-          realm={selectedRealm}
-          zones={zonesByRealm[selectedRealm.id] ?? []}
-          onClose={() => setSelectedRealm(null)}
-        />
+            <Title order={5}>Зоны</Title>
+            {worldZones.length === 0 ? (
+              <Text size="sm" c="dimmed" ta="center" py="md">
+                🌑 Нет зон в этом мире
+              </Text>
+            ) : (
+              worldZones.map((zone: Zone) => (
+                <Card key={zone.id} padding="xs" radius="md" withBorder className={s.drawerCard}>
+                  <Group justify="space-between">
+                    <Text size="sm" fw={500}>{zone.name}</Text>
+                    <Badge variant="light" size="xs">👥 {zone.agent_count ?? 0}</Badge>
+                  </Group>
+                </Card>
+              ))
+            )}
+          </Stack>
+        </Drawer>
       )}
     </div>
   );

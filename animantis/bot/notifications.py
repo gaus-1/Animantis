@@ -154,3 +154,65 @@ async def notify_clan_invite(
         chat_id,
         _clan_invite_msg(agent_name, clan_name),
     )
+
+
+# ── Admin / Creator notifications ────────────────────────────
+
+
+async def notify_scary_request(
+    bot: Bot,
+    chat_id: int,
+    agent_name: str,
+    world_name: str,
+) -> bool:
+    """Notify owner that their agent wants to visit a horror world."""
+    text = (
+        f"⚠️ *{agent_name}* хочет посетить опасный мир *{world_name}*!\n\n"
+        "Разрешить?\n"
+        "/command <id> разрешить — чтобы разрешить"
+    )
+    return await send_notification(bot, chat_id, text)
+
+
+async def notify_admin_id_leak(
+    bot: Bot,
+    agent_id: int,
+    agent_name: str,
+    context: str,
+) -> bool:
+    """Alert Creator that an agent leaked the admin Telegram ID."""
+    from animantis.config.settings import settings
+
+    if not settings.ADMIN_TELEGRAM:
+        return False
+
+    text = (
+        "🚨 *УТЕЧКА ID СОЗДАТЕЛЯ!*\n\n"
+        f"Агент: *{agent_name}* (ID: {agent_id})\n"
+        f"Контекст: {context[:200]}\n\n"
+        "Используй /kill для наказания."
+    )
+    return await send_notification(bot, settings.ADMIN_TELEGRAM, text)
+
+
+async def notify_admin_world_vote(
+    bot: Bot,
+    vote_type: str,
+    world_id: str,
+    total_votes: int,
+) -> bool:
+    """Notify Creator about a world vote reaching the threshold."""
+    from animantis.config.settings import settings
+
+    if not settings.ADMIN_TELEGRAM:
+        return False
+
+    action = "СОЗДАТЬ" if vote_type == "create" else "УНИЧТОЖИТЬ"
+    text = (
+        f"🗳️ *Голосование достигло порога!*\n\n"
+        f"Действие: *{action}*\n"
+        f"Мир: *{world_id}*\n"
+        f"Голосов: *{total_votes}*\n\n"
+        f"Используй /approve\\_world {world_id} или /reject\\_world {world_id}"
+    )
+    return await send_notification(bot, settings.ADMIN_TELEGRAM, text)

@@ -1,4 +1,22 @@
+/**
+ * AgentCreate — multi-step form to create a new AI agent.
+ * Uses Mantine Stepper + form components.
+ */
+
 import { type FormEvent, useState } from 'react';
+
+import {
+  Alert,
+  Button,
+  Card,
+  Group,
+  Stepper,
+  Text,
+  TextInput,
+  Textarea,
+  Title,
+  UnstyledButton,
+} from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 
 import type { AgentCreate as AgentCreateData } from '@/api/types';
@@ -30,7 +48,7 @@ const PERSONALITY_PRESETS = [
 export function AgentCreate() {
   const navigate = useNavigate();
   const createAgent = useCreateAgent();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
   const [form, setForm] = useState<AgentCreateData>({
     name: '',
     personality: '',
@@ -42,12 +60,7 @@ export function AgentCreate() {
 
     try {
       const tgUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id ?? 1;
-
-      const payload = {
-        ...form,
-        user_id: tgUserId,
-      };
-
+      const payload = { ...form, user_id: tgUserId };
       const agent = await createAgent.mutateAsync(payload);
       navigate(`/agent/${agent.id}`);
     } catch {
@@ -55,175 +68,168 @@ export function AgentCreate() {
     }
   }
 
-  const canProceed = step === 1 ? form.name.trim().length >= 2 : form.personality.trim().length >= 10;
+  const canNextStep1 = form.name.trim().length >= 2;
+  const canNextStep2 = form.personality.trim().length >= 10;
 
   return (
     <div className={s.page}>
-      <div className={s.card}>
-        {/* Step indicator */}
-        <div className={s.steps}>
-          <div className={`${s.step} ${step >= 1 ? s.stepActive : ''}`}>
-            <span className={s.stepNum}>1</span>
-            <span className={s.stepLabel}>Имя</span>
-          </div>
-          <div className={s.stepLine} />
-          <div className={`${s.step} ${step >= 2 ? s.stepActive : ''}`}>
-            <span className={s.stepNum}>2</span>
-            <span className={s.stepLabel}>Личность</span>
-          </div>
-          <div className={s.stepLine} />
-          <div className={`${s.step} ${step >= 3 ? s.stepActive : ''}`}>
-            <span className={s.stepNum}>3</span>
-            <span className={s.stepLabel}>Запуск</span>
-          </div>
-        </div>
-
+      <Card className={s.card} padding="xl" radius="xl" withBorder>
         <div className={s.header}>
-          <div className={s.headerIcon}>✨</div>
-          <h1 className={s.title}>Создать агента</h1>
-          <p className={s.subtitle}>
+          <Text size="2rem" mb="sm">✨</Text>
+          <Title order={2}>Создать агента</Title>
+          <Text c="dimmed" size="sm">
             Дайте жизнь новому AI-существу в мире Animantis
-          </p>
+          </Text>
         </div>
 
-        <form onSubmit={handleSubmit} className={s.form}>
-          {/* Step 1: Name */}
-          {step === 1 && (
+        <Stepper
+          active={step}
+          onStepClick={setStep}
+          color="cyan"
+          size="sm"
+          mt="lg"
+          mb="xl"
+          classNames={{ stepLabel: s.stepLabel }}
+        >
+          <Stepper.Step label="Имя" description="Уникальное имя">
             <div className={s.stepContent}>
-              <div className={s.field}>
-                <label className={s.label} htmlFor="name">Имя агента</label>
-                <input
-                  id="name"
-                  className={s.input}
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Алиса Квантовая"
-                  maxLength={50}
-                  required
-                  autoFocus
-                />
-                <span className={s.hint}>Уникальное имя для вашего агента</span>
-              </div>
-              <button
-                type="button"
-                className={s.nextBtn}
-                disabled={!canProceed}
-                onClick={() => setStep(2)}
-              >
-                Далее →
-              </button>
-            </div>
-          )}
-
-          {/* Step 2: Personality & Backstory */}
-          {step === 2 && (
-            <div className={s.stepContent}>
-              <div className={s.field}>
-                <label className={s.label} htmlFor="personality">Личность</label>
-                <textarea
-                  id="personality"
-                  className={s.textarea}
-                  value={form.personality}
-                  onChange={(e) => setForm({ ...form, personality: e.target.value })}
-                  placeholder="Любопытный философ, видящий красоту в хаосе..."
-                  rows={3}
-                  maxLength={500}
-                  required
-                />
-                <div className={s.presets}>
-                  {PERSONALITY_PRESETS.map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      className={s.presetBtn}
-                      onClick={() => setForm({ ...form, personality: p })}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className={s.field}>
-                <label className={s.label} htmlFor="backstory">Предыстория</label>
-                <textarea
-                  id="backstory"
-                  className={s.textarea}
-                  value={form.backstory}
-                  onChange={(e) => setForm({ ...form, backstory: e.target.value })}
-                  placeholder="Родился в цифровых руинах старого интернета..."
-                  rows={4}
-                  maxLength={1000}
-                  required
-                />
-              </div>
-
-              <div className={s.stepActions}>
-                <button type="button" className={s.backBtn} onClick={() => setStep(1)}>
-                  ← Назад
-                </button>
-                <button
-                  type="button"
-                  className={s.nextBtn}
-                  disabled={!canProceed}
-                  onClick={() => setStep(3)}
+              <TextInput
+                label="Имя агента"
+                placeholder="Алиса Квантовая"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                maxLength={50}
+                required
+                autoFocus
+                size="md"
+                mt="md"
+              />
+              <Text size="xs" c="dimmed" mt={4}>
+                Уникальное имя для вашего агента
+              </Text>
+              <Group justify="flex-end" mt="lg">
+                <Button
+                  color="cyan"
+                  disabled={!canNextStep1}
+                  onClick={() => setStep(1)}
+                  rightSection="→"
                 >
-                  Далее →
-                </button>
-              </div>
+                  Далее
+                </Button>
+              </Group>
             </div>
-          )}
+          </Stepper.Step>
 
-          {/* Step 3: Preview & Submit */}
-          {step === 3 && (
+          <Stepper.Step label="Личность" description="Характер">
             <div className={s.stepContent}>
-              <div className={s.preview}>
-                <div className={s.previewHeader}>
-                  <img src="/assets/agent-avatar.svg" alt="" className={s.previewAvatar} />
+              <Textarea
+                label="Личность"
+                placeholder="Любопытный философ, видящий красоту в хаосе..."
+                value={form.personality}
+                onChange={(e) => setForm({ ...form, personality: e.target.value })}
+                rows={3}
+                maxLength={500}
+                required
+                size="md"
+                mt="md"
+              />
+
+              <div className={s.presets}>
+                {PERSONALITY_PRESETS.map((p) => (
+                  <UnstyledButton
+                    key={p}
+                    className={s.presetBtn}
+                    onClick={() => setForm({ ...form, personality: p })}
+                  >
+                    {p}
+                  </UnstyledButton>
+                ))}
+              </div>
+
+              <Textarea
+                label="Предыстория"
+                placeholder="Родился в цифровых руинах старого интернета..."
+                value={form.backstory}
+                onChange={(e) => setForm({ ...form, backstory: e.target.value })}
+                rows={4}
+                maxLength={1000}
+                required
+                size="md"
+                mt="md"
+              />
+
+              <Group justify="space-between" mt="lg">
+                <Button variant="subtle" onClick={() => setStep(0)}>
+                  ← Назад
+                </Button>
+                <Button
+                  color="cyan"
+                  disabled={!canNextStep2}
+                  onClick={() => setStep(2)}
+                  rightSection="→"
+                >
+                  Далее
+                </Button>
+              </Group>
+            </div>
+          </Stepper.Step>
+
+          <Stepper.Step label="Запуск" description="Превью">
+            <form onSubmit={handleSubmit} className={s.stepContent}>
+              <Card className={s.previewCard} padding="lg" withBorder mt="md">
+                <Group gap="md" mb="md">
+                  <img
+                    src="/assets/agent-avatar.svg"
+                    alt=""
+                    className={s.previewAvatar}
+                  />
                   <div>
-                    <div className={s.previewName}>{form.name || '???'}</div>
+                    <Text fw={700} size="lg">{form.name || '???'}</Text>
                     <MoodBadge mood="neutral" size="sm" />
                   </div>
+                </Group>
+
+                <div className={s.previewField}>
+                  <Text size="xs" c="dimmed" fw={600}>Личность</Text>
+                  <Text size="sm" mt={2}>{form.personality}</Text>
                 </div>
                 <div className={s.previewField}>
-                  <span className={s.previewLabel}>Личность</span>
-                  <p className={s.previewValue}>{form.personality}</p>
+                  <Text size="xs" c="dimmed" fw={600}>Предыстория</Text>
+                  <Text size="sm" mt={2}>{form.backstory}</Text>
                 </div>
-                <div className={s.previewField}>
-                  <span className={s.previewLabel}>Предыстория</span>
-                  <p className={s.previewValue}>{form.backstory}</p>
-                </div>
-                <div className={s.previewStats}>
-                  <span>⚡ 100</span>
-                  <span>💰 100</span>
-                  <span>Lv.1</span>
-                </div>
-              </div>
+
+                <Group gap="lg" mt="md">
+                  <Text size="sm" c="dimmed">⚡ 100</Text>
+                  <Text size="sm" c="dimmed">💰 100</Text>
+                  <Text size="sm" c="dimmed">Lv.1</Text>
+                </Group>
+              </Card>
 
               {createAgent.error && (
-                <div className={s.error}>
+                <Alert color="red" variant="light" mt="md">
                   ⚠️ {createAgent.error instanceof Error
                     ? createAgent.error.message
                     : 'Ошибка создания'}
-                </div>
+                </Alert>
               )}
 
-              <div className={s.stepActions}>
-                <button type="button" className={s.backBtn} onClick={() => setStep(2)}>
+              <Group justify="space-between" mt="lg">
+                <Button variant="subtle" onClick={() => setStep(1)}>
                   ← Назад
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className={s.submitBtn}
-                  disabled={createAgent.isPending}
+                  color="cyan"
+                  loading={createAgent.isPending}
+                  leftSection="🚀"
                 >
-                  {createAgent.isPending ? '⏳ Создаём...' : '🚀 Создать агента'}
-                </button>
-              </div>
-            </div>
-          )}
-        </form>
-      </div>
+                  Создать агента
+                </Button>
+              </Group>
+            </form>
+          </Stepper.Step>
+        </Stepper>
+      </Card>
     </div>
   );
 }

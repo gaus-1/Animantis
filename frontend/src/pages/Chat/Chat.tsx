@@ -1,9 +1,23 @@
+/**
+ * Chat — real-time chat interface with an AI agent.
+ */
+
 import { type FormEvent, useEffect, useRef, useState } from 'react';
+
+import {
+  ActionIcon,
+  Avatar,
+  Group,
+  Loader,
+  Skeleton,
+  Text,
+  TextInput,
+} from '@mantine/core';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, Link } from 'react-router-dom';
 
 import { useAgent, useChatMutation } from '@/hooks/useApi';
 import { MoodBadge } from '@/components/MoodBadge/MoodBadge';
-import { Skeleton } from '@/components/Skeleton/Skeleton';
 
 import s from './Chat.module.css';
 
@@ -21,12 +35,10 @@ export function Chat() {
   const [currentMood, setCurrentMood] = useState('neutral');
   const messagesRef = useRef<HTMLDivElement>(null);
 
-  // Sync mood from agent data
   useEffect(() => {
     if (agent?.mood) setCurrentMood(agent.mood);
   }, [agent?.mood]);
 
-  // Auto-scroll to bottom
   useEffect(() => {
     messagesRef.current?.scrollTo({
       top: messagesRef.current.scrollHeight,
@@ -61,11 +73,13 @@ export function Chat() {
     return (
       <div className={s.chatPage}>
         <div className={s.chatHeader}>
-          <Skeleton variant="circle" width="44px" height="44px" />
-          <div>
-            <Skeleton variant="text" width="150px" height="16px" />
-            <Skeleton variant="text" width="100px" height="12px" />
-          </div>
+          <Group gap="sm">
+            <Skeleton circle height={44} />
+            <div>
+              <Skeleton width={150} height={16} mb={4} />
+              <Skeleton width={100} height={12} />
+            </div>
+          </Group>
         </div>
       </div>
     );
@@ -73,82 +87,99 @@ export function Chat() {
 
   return (
     <div className={s.chatPage}>
+      {/* Header */}
       <div className={s.chatHeader}>
-        <Link to={`/agent/${agent?.id}`} className={s.avatarLink}>
-          <img
-            src="/assets/agent-avatar.svg"
-            alt={agent?.name ?? 'Agent'}
-            className={s.chatAvatar}
-          />
-          <span className={s.onlineIndicator} />
-        </Link>
-        <div className={s.headerInfo}>
-          <div className={s.chatName}>{agent?.name ?? 'Агент'}</div>
-          <div className={s.chatStatus}>
-            <MoodBadge mood={currentMood} size="sm" />
-            <span className={s.chatLevel}>Lv.{agent?.level ?? 1}</span>
+        <Group gap="sm" wrap="nowrap">
+          <Link to={`/agent/${agent?.id}`} className={s.avatarLink}>
+            <Avatar
+              src="/assets/agent-avatar.svg"
+              alt={agent?.name ?? 'Agent'}
+              size="md"
+              className={s.chatAvatar}
+            />
+            <span className={s.onlineIndicator} />
+          </Link>
+          <div>
+            <Text fw={600} size="sm">{agent?.name ?? 'Агент'}</Text>
+            <Group gap="xs">
+              <MoodBadge mood={currentMood} size="xs" />
+              <Text size="xs" c="dimmed">Lv.{agent?.level ?? 1}</Text>
+            </Group>
           </div>
-        </div>
+        </Group>
       </div>
 
+      {/* Messages */}
       <div className={s.messages} ref={messagesRef}>
         {messages.length === 0 && (
           <div className={s.welcome}>
-            <div className={s.welcomeIcon}>💬</div>
-            <p className={s.welcomeText}>
-              Начните разговор с {agent?.name ?? 'агентом'}
-            </p>
-            <p className={s.welcomeHint}>
+            <Text size="2rem" mb="sm">💬</Text>
+            <Text fw={500}>Начните разговор с {agent?.name ?? 'агентом'}</Text>
+            <Text size="sm" c="dimmed">
               Агент ответит в своём характере и настроении
-            </p>
+            </Text>
           </div>
         )}
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`${s.bubble} ${
-              msg.role === 'user' ? s.bubbleUser : s.bubbleAgent
-            }`}
-          >
-            {msg.role === 'agent' && (
-              <img
-                src="/assets/agent-avatar.svg"
-                alt=""
-                className={s.bubbleAvatar}
-              />
-            )}
-            <div className={s.bubbleContent}>
-              {msg.text}
-            </div>
-          </div>
-        ))}
+
+        <AnimatePresence mode="popLayout">
+          {messages.map((msg, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 8, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.2 }}
+              className={`${s.bubble} ${
+                msg.role === 'user' ? s.bubbleUser : s.bubbleAgent
+              }`}
+            >
+              {msg.role === 'agent' && (
+                <Avatar
+                  src="/assets/agent-avatar.svg"
+                  size="sm"
+                  className={s.bubbleAvatar}
+                />
+              )}
+              <div className={s.bubbleContent}>{msg.text}</div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
         {chatMutation.isPending && (
           <div className={`${s.bubble} ${s.bubbleAgent}`}>
-            <img src="/assets/agent-avatar.svg" alt="" className={s.bubbleAvatar} />
-            <div className={s.typingDots}>
-              <span className={s.dot} />
-              <span className={s.dot} />
-              <span className={s.dot} />
-            </div>
+            <Avatar src="/assets/agent-avatar.svg" size="sm" className={s.bubbleAvatar} />
+            <Loader type="dots" size="sm" color="cyan" />
           </div>
         )}
       </div>
 
+      {/* Input */}
       <form className={s.inputArea} onSubmit={handleSend}>
-        <input
+        <TextInput
           className={s.chatInput}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Напишите сообщение..."
           disabled={chatMutation.isPending}
+          radius="xl"
+          size="md"
+          styles={{
+            input: {
+              backgroundColor: 'rgba(12, 18, 34, 0.85)',
+              borderColor: 'rgba(255, 255, 255, 0.08)',
+            },
+          }}
         />
-        <button
+        <ActionIcon
           type="submit"
-          className={s.sendBtn}
+          variant="filled"
+          color="cyan"
+          size="lg"
+          radius="xl"
           disabled={chatMutation.isPending || !input.trim()}
+          className={s.sendBtn}
         >
-          <span className={s.sendIcon}>↑</span>
-        </button>
+          ↑
+        </ActionIcon>
       </form>
     </div>
   );
