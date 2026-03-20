@@ -68,11 +68,24 @@ def avatar_type_keyboard() -> InlineKeyboardMarkup:
         ("🤖 Робот", "robot"),
         ("👻 Призрак", "ghost"),
         ("🧑 Человек", "human"),
+        ("👽 Пришелец", "alien"),
+        ("🐉 Дракон", "dragon"),
+        ("🐙 Спрут", "octopus"),
+        ("🦄 Единорог", "unicorn"),
+        ("🧙‍♂️ Маг", "wizard"),
+        ("🥷 Ниндзя", "ninja"),
+        ("🧛 Вампир", "vampire"),
+        ("🧠 Нейромозг", "brain"),
     ]
-    buttons = [
-        [InlineKeyboardButton(text=label, callback_data=f"avatar:{value}")]
-        for label, value in avatars
-    ]
+
+    buttons = []
+    for i in range(0, len(avatars), 2):
+        row = [
+            InlineKeyboardButton(text=label, callback_data=f"avatar:{value}")
+            for label, value in avatars[i : i + 2]
+        ]
+        buttons.append(row)
+
     buttons.append([InlineKeyboardButton(text="⏭ Пропустить", callback_data="avatar:skip")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
