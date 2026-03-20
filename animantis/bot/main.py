@@ -7,6 +7,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.storage.redis import RedisStorage
 
 from animantis.bot.handlers import router as handlers_router
 from animantis.config.settings import settings
@@ -24,7 +25,12 @@ def create_bot() -> Bot:
 
 def create_dispatcher() -> Dispatcher:
     """Create aiogram Dispatcher with FSM storage and handlers."""
-    dp = Dispatcher(storage=MemoryStorage())
+    if hasattr(settings, "REDIS_URL") and settings.REDIS_URL:
+        storage = RedisStorage.from_url(settings.REDIS_URL)
+    else:
+        storage = MemoryStorage()
+
+    dp = Dispatcher(storage=storage)
     dp.include_router(handlers_router)
     return dp
 
