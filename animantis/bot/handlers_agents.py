@@ -3,6 +3,7 @@
 import logging
 
 from aiogram import F, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -284,11 +285,15 @@ async def callback_agent_status(callback: CallbackQuery) -> None:
         f"😌 {agent.mood} | ⭐ {agent.reputation}\n"
         f"📍 {zone_name} | 🔄 {agent.total_ticks} тиков"
     )
-    await callback.message.edit_text(  # type: ignore[union-attr]
-        text,
-        parse_mode="Markdown",
-        reply_markup=agent_actions_keyboard(agent.id),
-    )
+    try:
+        await callback.message.edit_text(  # type: ignore[union-attr]
+            text,
+            parse_mode="Markdown",
+            reply_markup=agent_actions_keyboard(agent.id),
+        )
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e):
+            raise
     await callback.answer()
 
 
