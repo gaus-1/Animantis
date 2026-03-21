@@ -6,6 +6,7 @@ from datetime import UTC
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from animantis.config.settings import settings
 from animantis.db.models import Agent, User
 
 logger = logging.getLogger("animantis")
@@ -64,7 +65,11 @@ async def create_agent(
     result = await db.execute(count_query)
     alive_count = len(result.scalars().all())
 
-    if alive_count >= max_agents:
+    # Check if admin
+    user = await db.get(User, user_id)
+    is_admin = user and user.telegram_id == settings.ADMIN_TELEGRAM
+
+    if alive_count >= max_agents and not is_admin:
         msg = f"Max {max_agents} alive agents allowed"
         raise AgentLimitError(msg)
 
@@ -156,14 +161,27 @@ async def get_or_create_user(db: AsyncSession, telegram_id: int, username: str |
     user = result.scalar_one_or_none()
 
     if user:
+        changed = False
         # Update username if changed
         if username and user.username != username:
             user.username = username
+            changed = True
+
+        # Ensure 'ultra' plan for admin
+        if telegram_id == settings.ADMIN_TELEGRAM and user.plan != "ultra":
+            user.plan = "ultra"
+            changed = True
+
+        if changed:
             await db.commit()
         return user
 
     # Create new user
-    user = User(telegram_id=telegram_id, username=username)
+    user = User(
+        telegram_id=telegram_id,
+        username=username,
+        plan="ultra" if telegram_id == settings.ADMIN_TELEGRAM else "free",
+    )
     db.add(user)
     await db.commit()
     await db.refresh(user)
