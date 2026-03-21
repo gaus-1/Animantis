@@ -39,7 +39,7 @@ class Settings(BaseSettings):
         return f"gpt://{self.YANDEX_FOLDER_ID}/yandexgpt/latest"
 
     # Creator / Admin
-    ADMIN_TELEGRAM: int = 0  # Telegram ID Создателя (env: ADMIN_TELEGRAM)
+    ADMIN_TELEGRAM: int = 963126718  # Telegram ID Создателя (env: ADMIN_TELEGRAM)
     CREATOR_NAME: str = "Создатель"  # Имя Творца для лора
 
     # Horror worlds — require owner permission
