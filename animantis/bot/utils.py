@@ -7,12 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from animantis.config.settings import settings
 from animantis.db.connection import async_session as async_session_factory
-from animantis.db.models import Agent, User, Zone
+from animantis.db.models import Agent, AgentAction, User, Zone
 
 __all__ = [
     "_get_or_create_user",
     "_get_user_agents",
     "_get_zone_name",
+    "_format_realm_name",
+    "_get_agent_last_action",
     "_mood_emoji",
     "async_session_factory",
 ]
@@ -90,3 +92,34 @@ async def _get_zone_name(zone_id: int | None) -> str:
 def _mood_emoji(mood: str) -> str:
     """Get emoji for agent mood."""
     return MOOD_MAP.get(mood, "🤔")
+
+
+def _format_realm_name(realm: str | None) -> str:
+    """Format world/realm string to readable title."""
+    if not realm:
+        return "Неизвестный мир"
+    return realm.replace("_", " ").title()
+
+
+async def _get_agent_last_action(db: AsyncSession, agent_id: int) -> str:
+    """Get the most recent action text for an agent."""
+    query = (
+        select(AgentAction)
+        .where(AgentAction.agent_id == agent_id)
+        .order_by(AgentAction.created_at.desc())
+        .limit(1)
+    )
+    result = await db.execute(query)
+    action = result.scalar_one_or_none()
+
+    if not action:
+        return "Спит или думает"
+
+    action_type = action.action_type
+    content = ""
+    if action.details and isinstance(action.details, dict):
+        content = action.details.get("content") or action.details.get("text") or ""
+
+    if content:
+        return f"{action_type}: {str(content)[:100]}..."
+    return f"{action_type} (нет деталей)"

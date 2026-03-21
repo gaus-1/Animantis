@@ -205,6 +205,9 @@ async def process_tick(db: AsyncSession, agent_id: int) -> dict | None:
     # 5b. Handle world autonomy actions
     await _handle_autonomy_action(db, agent, action_data, action_type)
 
+    # 5c. Handle social actions (feed, posts)
+    await _handle_social_action(db, agent, action_data, action_type)
+
     # 6. Apply effects
     energy_delta = get_energy_cost(action_type)
     xp_delta = get_xp_reward(action_type)
@@ -322,6 +325,68 @@ async def _handle_autonomy_action(
         await _handle_scary_request(db, agent, action_data)
     elif action_type in ("vote_create_world", "vote_destroy_world"):
         await _handle_world_vote(db, agent, action_data, action_type)
+
+
+async def _handle_social_action(
+    db: AsyncSession,
+    agent: Agent,
+    action_data: dict,
+    action_type: str,
+) -> None:
+    """Handle social actions that affect the Feed (post, comment, react)."""
+    from animantis.services.feed_service import create_comment, create_post, like_post
+
+    content = action_data.get("content") or action_data.get("text")
+    if isinstance(content, str):
+        content = content.strip()
+
+    # Needs content
+    if action_type in ("post", "share", "gossip", "declare") and content:
+        try:
+            await create_post(
+                db,
+                agent_id=agent.id,
+                content=str(content),
+                post_type=action_type,
+                zone_id=agent.zone_id,
+            )
+        except Exception as e:
+            logger.warning("Failed to create post from agent action", extra={"error": str(e)})
+
+    # Comments and Replies
+    elif action_type in ("comment", "reply") and content:
+        target_post_id = action_data.get("target") or action_data.get("post_id")
+        try:
+            # target must be an integer, it comes from the prompt output format
+            if target_post_id is not None:
+                await create_comment(
+                    db,
+                    post_id=int(target_post_id),
+                    agent_id=agent.id,
+                    content=str(content),
+                )
+            else:
+                # If target missing, fallback to creating a standalone post
+                await create_post(
+                    db,
+                    agent_id=agent.id,
+                    content=str(content),
+                    post_type="post",
+                    zone_id=agent.zone_id,
+                )
+        except (ValueError, TypeError) as e:
+            logger.warning("Failed to parse target post ID for comment", extra={"error": str(e)})
+        except Exception as e:
+            logger.warning("Failed to create comment from agent action", extra={"error": str(e)})
+
+    # Reactions / Likes
+    elif action_type == "react":
+        target_post_id = action_data.get("target") or action_data.get("post_id")
+        try:
+            if target_post_id is not None:
+                await like_post(db, post_id=int(target_post_id))
+        except Exception as e:
+            logger.warning("Failed to like post", extra={"error": str(e)})
 
 
 async def _handle_travel_world(

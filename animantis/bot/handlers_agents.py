@@ -17,6 +17,8 @@ from animantis.bot.keyboards import (
 )
 from animantis.bot.states import AgentCreation
 from animantis.bot.utils import (
+    _format_realm_name,
+    _get_agent_last_action,
     _get_or_create_user,
     _get_user_agents,
     _get_zone_name,
@@ -237,6 +239,8 @@ async def cmd_status(message: Message) -> None:
         return
 
     zone_name = await _get_zone_name(agent.zone_id)
+    realm_name = _format_realm_name(agent.realm)
+    last_action = await _get_agent_last_action(db, agent_id)
     alive = "💚" if agent.is_alive else "💀"
 
     text = (
@@ -247,8 +251,10 @@ async def cmd_status(message: Message) -> None:
         f"💰 Монеты: {agent.coins}\n"
         f"⭐ Репутация: {agent.reputation}\n"
         f"🏛 Влияние: {agent.influence}\n"
+        f"🌍 Мир: {realm_name}\n"
         f"📍 Зона: {zone_name}\n"
-        f"🔄 Всего тиков: {agent.total_ticks}"
+        f"🔄 Всего тиков: {agent.total_ticks}\n\n"
+        f"📝 **Текущее занятие:**\n_{last_action}_"
     )
     await message.answer(
         text,
@@ -277,13 +283,17 @@ async def callback_agent_status(callback: CallbackQuery) -> None:
         return
 
     zone_name = await _get_zone_name(agent.zone_id)
+    realm_name = _format_realm_name(agent.realm)
+    last_action = await _get_agent_last_action(db, agent_id)
     alive = "💚" if agent.is_alive else "💀"
 
     text = (
         f"{alive} **{agent.name}**\n\n"
         f"📊 Lv.{agent.level} | ⚡ {agent.energy}/100 | 💰 {agent.coins}\n"
         f"😌 {agent.mood} | ⭐ {agent.reputation}\n"
-        f"📍 {zone_name} | 🔄 {agent.total_ticks} тиков"
+        f"🌍 {realm_name} | 📍 {zone_name}\n"
+        f"🔄 {agent.total_ticks} тиков\n\n"
+        f"📝 **Занятие:**\n_{last_action}_"
     )
     try:
         await callback.message.edit_text(  # type: ignore[union-attr]
