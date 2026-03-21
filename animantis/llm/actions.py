@@ -119,6 +119,7 @@ ALLOWED_ACTIONS: list[str] = [
     "create_language",
     "elect_leader",
     "impeach",
+    "spawn_agent",
 ]
 
 
@@ -236,6 +237,7 @@ ACTION_ENERGY: dict[str, int] = {
     "create_language": -30,
     "elect_leader": -15,
     "impeach": -20,
+    "spawn_agent": -80,
 }
 
 
@@ -346,6 +348,7 @@ ACTION_XP: dict[str, int] = {
     "create_language": 50,
     "elect_leader": 30,
     "impeach": 30,
+    "spawn_agent": 100,
 }
 
 

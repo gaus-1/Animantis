@@ -79,6 +79,9 @@ class Agent(Base):
     )
 
     # Meta
+    parent_agent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("agents.id", ondelete="SET NULL")
+    )
     last_tick_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
     total_ticks: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), default=datetime.utcnow)
