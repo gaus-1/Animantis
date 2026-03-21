@@ -40,7 +40,7 @@ class Settings(BaseSettings):
 
     # Creator / Admin
     ADMIN_TELEGRAM: int = 0  # Telegram ID Создателя (env: ADMIN_TELEGRAM)
-    CREATOR_NAME: str = "Gauss"  # Имя Творца для лора
+    CREATOR_NAME: str = "Создатель"  # Имя Творца для лора
 
     # Horror worlds — require owner permission
     HORROR_WORLDS: list[str] = [
