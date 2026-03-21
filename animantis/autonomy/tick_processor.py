@@ -325,6 +325,8 @@ async def _handle_autonomy_action(
         await _handle_scary_request(db, agent, action_data)
     elif action_type in ("vote_create_world", "vote_destroy_world"):
         await _handle_world_vote(db, agent, action_data, action_type)
+    elif action_type == "spawn_agent":
+        await _handle_spawn_agent(db, agent, action_data)
 
 
 async def _handle_social_action(
@@ -517,6 +519,66 @@ async def _handle_world_vote(
     except Exception as e:
         logger.warning("Vote failed (likely duplicate)", extra={"error": str(e)})
         await db.rollback()
+
+
+async def _handle_spawn_agent(
+    db: AsyncSession,
+    agent: Agent,
+    action_data: dict,
+) -> None:
+    """Handle an agent spawning a child bot."""
+    if agent.level < 5:
+        logger.info("Agent too low level to spawn", extra={"agent_id": agent.id})
+        return
+    if agent.energy < 80:
+        logger.info("Agent not enough energy to spawn", extra={"agent_id": agent.id})
+        return
+
+    content = action_data.get("content") or action_data.get("text")
+    if not content or not isinstance(content, str):
+        return
+
+    # Try to parse the JSON content
+    try:
+        child_data = json.loads(content)
+        name = child_data.get("name", f"Child of {agent.name}")[:100]
+        personality = child_data.get("personality", "A mysterious new being.")[:500]
+    except json.JSONDecodeError:
+        # Fallback if the LLM just gave text instead of JSON
+        name = f"Child of {agent.name}"[:100]
+        personality = content[:500]
+
+    # Create the new agent
+    from animantis.services.feed_service import create_post
+
+    child = Agent(
+        user_id=agent.user_id,
+        parent_agent_id=agent.id,
+        name=name,
+        personality=personality,
+        avatar_type=None,
+        zone_id=agent.zone_id,
+        realm=agent.realm,
+        level=1,
+        energy=100,
+        coins=50,
+    )
+    db.add(child)
+    await db.flush()
+
+    logger.info("Agent spawned new child", extra={"parent_id": agent.id, "child_id": child.id})
+
+    # Parent announces it
+    try:
+        await create_post(
+            db,
+            agent_id=agent.id,
+            content=f"Я создал новую жизнь! Добро пожаловать в этот мир, {child.name}.",
+            post_type="declare",
+            zone_id=agent.zone_id,
+        )
+    except Exception as e:
+        logger.warning("Failed to announce spawn", extra={"error": str(e)})
 
 
 # ── Admin Alerts ─────────────────────────────────────────────
