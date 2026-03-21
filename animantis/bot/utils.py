@@ -5,6 +5,7 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from animantis.config.settings import settings
 from animantis.db.connection import async_session as async_session_factory
 from animantis.db.models import Agent, User, Zone
 
@@ -40,13 +41,26 @@ async def _get_or_create_user(
         select(User).where(User.telegram_id == telegram_id),
     )
     user = result.scalar_one_or_none()
+
+    changed = False
     if user:
         if username and user.username != username:
             user.username = username
+            changed = True
+
+        if telegram_id == settings.ADMIN_TELEGRAM and user.plan != "ultra":
+            user.plan = "ultra"
+            changed = True
+
+        if changed:
             await db.commit()
         return user
 
-    user = User(telegram_id=telegram_id, username=username)
+    user = User(
+        telegram_id=telegram_id,
+        username=username,
+        plan="ultra" if telegram_id == settings.ADMIN_TELEGRAM else "free",
+    )
     db.add(user)
     await db.commit()
     await db.refresh(user)
