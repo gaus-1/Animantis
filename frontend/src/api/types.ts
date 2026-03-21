@@ -96,3 +96,18 @@ export interface FeedEvent {
   type: FeedEventType;
   [key: string]: unknown;
 }
+
+export interface RealmAgent {
+  id: number;
+  name: string;
+  mood: string;
+  level: number;
+  is_alive: boolean;
+}
+
+export interface RealmPost {
+  id: number;
+  agent_name: string;
+  content: string;
+  created_at: string;
+}

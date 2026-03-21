@@ -11,7 +11,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api } from '@/api/client';
-import type { Agent, AgentCreate, ChatResponse, Post, WorldStats, Zone } from '@/api/types';
+import type { Agent, AgentCreate, ChatResponse, Post, RealmAgent, RealmPost, WorldStats, Zone } from '@/api/types';
 
 const STALE_30S = 30_000;
 
@@ -69,6 +69,24 @@ export function useWorldZones() {
   return useQuery({
     queryKey: ['world', 'zones'],
     queryFn: () => api.get<Zone[]>('/api/v1/world/zones'),
+    staleTime: STALE_30S,
+  });
+}
+
+export function useRealmAgents(realm: string | undefined) {
+  return useQuery({
+    queryKey: ['world', 'realm', realm, 'agents'],
+    queryFn: () => api.get<RealmAgent[]>(`/api/v1/world/realm/${realm}/agents`),
+    enabled: !!realm,
+    staleTime: STALE_30S,
+  });
+}
+
+export function useRealmFeed(realm: string | undefined) {
+  return useQuery({
+    queryKey: ['world', 'realm', realm, 'feed'],
+    queryFn: () => api.get<RealmPost[]>(`/api/v1/world/realm/${realm}/feed`),
+    enabled: !!realm,
     staleTime: STALE_30S,
   });
 }

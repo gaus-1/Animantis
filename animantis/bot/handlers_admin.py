@@ -69,7 +69,7 @@ async def cmd_admin(message: Message) -> None:
         )
 
     text = (
-        "👑 *Панель Создателя — Gauss*\n\n"
+        "👑 *Панель Создателя*\n\n"
         f"🤖 Агентов: {agent_count} (живых: {alive_count})\n"
         f"🗳 Голосов (ожидание): {pending_votes}\n\n"
         "**Команды:**\n"

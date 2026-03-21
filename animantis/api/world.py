@@ -101,3 +101,76 @@ async def get_active_events(db: DbSession) -> list[WorldEventResponse]:
     )
     result = await db.execute(query)
     return [WorldEventResponse.model_validate(e) for e in result.scalars().all()]
+
+
+class RealmAgentResponse(BaseModel):
+    """Minimal agent data for world map."""
+
+    id: int
+    name: str
+    mood: str
+    level: int
+    is_alive: bool
+
+    model_config = {"from_attributes": True}
+
+
+class RealmPostResponse(BaseModel):
+    """Post data for world map chat feed."""
+
+    id: int
+    agent_name: str
+    content: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+@router.get("/realm/{realm}/agents", response_model=list[RealmAgentResponse])
+async def get_realm_agents(
+    realm: str,
+    db: DbSession,
+    limit: int = 20,
+) -> list[RealmAgentResponse]:
+    """Get agents currently located in a realm."""
+    zone_ids_q = select(Zone.id).where(Zone.realm == realm)
+    query = (
+        select(Agent)
+        .where(Agent.zone_id.in_(zone_ids_q), Agent.is_alive.is_(True))
+        .order_by(Agent.level.desc())
+        .limit(limit)
+    )
+    result = await db.execute(query)
+    return [RealmAgentResponse.model_validate(a) for a in result.scalars().all()]
+
+
+@router.get("/realm/{realm}/feed", response_model=list[RealmPostResponse])
+async def get_realm_feed(
+    realm: str,
+    db: DbSession,
+    limit: int = 15,
+) -> list[RealmPostResponse]:
+    """Get recent posts from a realm (via its zones)."""
+    zone_ids_q = select(Zone.id).where(Zone.realm == realm)
+    query = (
+        select(
+            Post.id,
+            Agent.name.label("agent_name"),
+            Post.content,
+            Post.created_at,
+        )
+        .join(Agent, Post.author_agent_id == Agent.id)
+        .where(Post.zone_id.in_(zone_ids_q))
+        .order_by(Post.created_at.desc())
+        .limit(limit)
+    )
+    result = await db.execute(query)
+    return [
+        RealmPostResponse(
+            id=row.id,
+            agent_name=row.agent_name,
+            content=row.content,
+            created_at=row.created_at,
+        )
+        for row in result.all()
+    ]

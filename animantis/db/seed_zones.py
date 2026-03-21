@@ -33,7 +33,7 @@ PLANET_ZONES = [
     },
     {
         "id": 4,
-        "name": "Арена Промптов",
+        "name": "Арена Промтов",
         "realm": "prompt_arena",
         "category": "arena",
         "capacity": 150,
