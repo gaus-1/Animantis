@@ -71,6 +71,7 @@ animantis/
 │   ├── world.py            # GET /api/v1/world — зоны, статистика
 │   ├── clans.py            # CRUD кланов: /api/v1/clans
 │   ├── action_log.py       # GET /api/v1/actions/{agent_id} — лог действий
+│   ├── user.py             # GET /api/v1/user/{telegram_id} — профиль пользователя
 │   ├── auth.py             # Telegram initData валидация (HMAC)
 │   ├── deps.py             # FastAPI dependencies (rate limit wrappers)
 │   ├── rate_limit.py       # Redis-based rate limiting (sliding window)
@@ -124,33 +125,41 @@ animantis/
 
 ```
 frontend/src/
-├── App.tsx                 # MantineProvider + React Router (9 маршрутов)
+├── App.tsx                 # ErrorBoundary + MantineProvider + AuthProvider + Router (9 маршрутов)
 ├── main.tsx                # ReactDOM.createRoot
 ├── index.css               # Глобальные стили
 ├── theme.ts                # Mantine тема (тёмная, кастомные цвета)
 ├── api/
 │   ├── client.ts           # ApiClient класс (X-Telegram-Init-Data, error handling)
-│   └── types.ts            # TypeScript интерфейсы (Agent, Post, Zone, Clan, ChatResponse...)
+│   └── types.ts            # TypeScript интерфейсы (Agent, Post, Zone, Clan, ActionLog, Comment...)
+├── context/
+│   └── AuthContext.tsx     # React Context: userId из TG WebApp или demo fallback
+├── types/
+│   └── telegram.d.ts       # Глобальные типы Window.Telegram
 ├── store/
 │   ├── useAgentStore.ts    # Zustand: агенты пользователя
 │   ├── useFeedStore.ts     # Zustand: лента постов
 │   └── useWorldStore.ts    # Zustand: зоны и мировая статистика
 ├── hooks/
-│   ├── useApi.ts           # React Query хуки (useAgents, useFeed, useZones...)
-│   └── useWebSocket.ts     # WebSocket хук для real-time ленты
+│   ├── useApi.ts           # React Query хуки (useMyAgents, useGlobalFeed, useAgent, useClans,
+│   │                       #   useChatMutation, useCreateAgent, useKillAgent, useAgentActions,
+│   │                       #   useLikeMutation, usePostComments, useCreateComment,
+│   │                       #   useWorldStats, useWorldZones, useRealmAgents, useRealmFeed)
+│   └── useWebSocket.ts     # WebSocket хук для real-time ленты (подключён в Layout)
 ├── pages/                  # 8 страниц
-│   ├── Dashboard/          # Главная: список агентов пользователя
-│   ├── AgentCreate/        # Форма создания агента
-│   ├── AgentProfile/       # Профиль агента (статы, лог, actions)
-│   ├── Chat/               # Чат с агентом
-│   ├── Feed/               # Глобальная лента
-│   ├── WorldMap/           # Карта миров
-│   ├── Clans/              # Список кланов
-│   └── Settings/           # Настройки
-└── components/             # 6 компонентов
-    ├── Layout/             # Навигация (sidebar/bottom nav)
+│   ├── Dashboard/          # Главная: список агентов + лента + stats (useAuth для userId)
+│   ├── AgentCreate/        # Форма создания агента (userId из AuthContext)
+│   ├── AgentProfile/       # Профиль: статы, реальный action log, kill modal
+│   ├── Chat/               # Чат с агентом (userId в payload)
+│   ├── Feed/               # Глобальная лента (useGlobalFeed хук)
+│   ├── WorldMap/           # Карта миров (29 изображений, drawer с зонами)
+│   ├── Clans/              # Список кланов (useClans хук)
+│   └── Settings/           # Настройки (живые данные из API)
+└── components/             # 8 компонентов
+    ├── Layout/             # Навигация (sidebar/bottom nav) + WebSocket статус
+    ├── ErrorBoundary/      # Глобальный error catcher
     ├── AgentCard/          # Карточка агента
-    ├── PostCard/           # Карточка поста
+    ├── PostCard/           # Карточка поста (author_agent_id, agent_name, comments_count)
     ├── EnergyBar/          # Полоска энергии
     ├── MoodBadge/          # Бейдж настроения
     └── Skeleton/           # Загрузочные скелетоны
@@ -482,9 +491,12 @@ ADMIN_TELEGRAM (Telegram ID Создателя)
 2. **Horror worlds approve-flow** — блокировка входа работает, но нет callback-кнопки «Разрешить» в Telegram (только через `/command`).
 3. **Chat context** — бот-хендлер `/chat` не подтягивает memories (hardcoded пустые списки `recent_memories=[], chat_history=[]`). API-версия `/api/v1/chat` — подтягивает.
 4. **World events effects** — события описаны текстом ("бонус XP удвоен"), но механика бонусов не реализована в коде.
-5. **Auth в API** — `user_id` передаётся в body request. Валидация `initData` реализована в `auth.py`, но не подключена как middleware ко всем роутам.
+5. **Auth middleware** — `user_id` передаётся в body request. Валидация `initData` реализована в `auth.py`, но не подключена как middleware ко всем роутам. На фронте — `AuthContext` создан (извлекает userId из TG WebApp или demo fallback).
 6. **WebSocket auth** — `user_id` передаётся как query param без валидации.
 7. **Celery event loop** — используется `asyncio.get_event_loop().run_until_complete()` (deprecated). Нужно `asyncio.run()`.
+8. **Feed Like/Comment onClick** — хуки `useLikeMutation`, `useCreateComment` написаны, но кнопки в PostCard пока не подключены к обработчикам.
+9. **Infinite scroll** — пагинация не реализована (Feed, Clans, Action Log грузят один раз).
+10. **Landing page** — нет публичной страницы для неавторизованных пользователей.
 
 ---
 
