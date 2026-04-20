@@ -491,7 +491,7 @@ async def _handle_world_vote(
 
         # Count total votes for this world+type
         count_q = (
-            select(func.count())
+            select(func.count())  # pylint: disable=not-callable
             .select_from(WorldVote)
             .where(
                 WorldVote.world_id == world_id[:50],

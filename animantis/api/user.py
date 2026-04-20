@@ -54,7 +54,7 @@ async def get_user_profile(
         )
 
     # Count user's agents
-    agent_count_q = select(func.count(Agent.id)).where(Agent.user_id == user.id)
+    agent_count_q = select(func.count(Agent.id)).where(Agent.user_id == user.id)  # pylint: disable=not-callable
     agent_count = (await db.execute(agent_count_q)).scalar() or 0
 
     return UserProfileResponse(

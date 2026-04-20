@@ -262,7 +262,7 @@ async def get_memory_summary(
     agent_id: int,
 ) -> dict[str, int | str]:
     """Get a summary of agent's memory stats."""
-    total_q = select(func.count(AgentMemory.id)).where(
+    total_q = select(func.count(AgentMemory.id)).where(  # pylint: disable=not-callable
         AgentMemory.agent_id == agent_id,
     )
     total = (await db.execute(total_q)).scalar() or 0

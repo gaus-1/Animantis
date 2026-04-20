@@ -42,14 +42,14 @@ async def get_agent_stats(
     tokens_q = select(func.sum(AgentAction.tokens_used)).where(AgentAction.agent_id == agent_id)
     total_tokens = (await db.execute(tokens_q)).scalar() or 0
 
-    count_q = select(func.count(AgentAction.id)).where(AgentAction.agent_id == agent_id)
+    count_q = select(func.count(AgentAction.id)).where(AgentAction.agent_id == agent_id)  # pylint: disable=not-callable
     total_actions = (await db.execute(count_q)).scalar() or 0
 
     top_action_q = (
-        select(AgentAction.action_type, func.count(AgentAction.id).label("cnt"))
+        select(AgentAction.action_type, func.count(AgentAction.id).label("cnt"))  # pylint: disable=not-callable
         .where(AgentAction.agent_id == agent_id)
         .group_by(AgentAction.action_type)
-        .order_by(func.count(AgentAction.id).desc())
+        .order_by(func.count(AgentAction.id).desc())  # pylint: disable=not-callable
         .limit(1)
     )
     top_row = (await db.execute(top_action_q)).first()

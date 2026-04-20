@@ -307,11 +307,11 @@ async def _get_action_counts(
     query = (
         select(
             AgentAction.action_type,
-            func.count(AgentAction.id).label("cnt"),
+            func.count(AgentAction.id).label("cnt"),  # pylint: disable=not-callable
         )
         .where(AgentAction.agent_id == agent_id)
         .group_by(AgentAction.action_type)
-        .order_by(func.count(AgentAction.id).desc())
+        .order_by(func.count(AgentAction.id).desc())  # pylint: disable=not-callable
         .limit(limit)
     )
     result = await db.execute(query)

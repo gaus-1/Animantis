@@ -72,14 +72,14 @@ async def get_zones(db: DbSession) -> list[ZoneResponse]:
 @router.get("/stats", response_model=WorldStatsResponse)
 async def get_world_stats(db: DbSession) -> WorldStatsResponse:
     """Get global world statistics."""
-    total_agents = (await db.execute(select(func.count(Agent.id)))).scalar() or 0
+    total_agents = (await db.execute(select(func.count(Agent.id)))).scalar() or 0  # pylint: disable=not-callable
     alive_agents = (
-        await db.execute(select(func.count(Agent.id)).where(Agent.is_alive.is_(True)))
+        await db.execute(select(func.count(Agent.id)).where(Agent.is_alive.is_(True)))  # pylint: disable=not-callable
     ).scalar() or 0
-    total_posts = (await db.execute(select(func.count(Post.id)))).scalar() or 0
-    total_zones = (await db.execute(select(func.count(Zone.id)))).scalar() or 0
+    total_posts = (await db.execute(select(func.count(Post.id)))).scalar() or 0  # pylint: disable=not-callable
+    total_zones = (await db.execute(select(func.count(Zone.id)))).scalar() or 0  # pylint: disable=not-callable
     active_events = (
-        await db.execute(select(func.count(WorldEvent.id)).where(WorldEvent.status == "active"))
+        await db.execute(select(func.count(WorldEvent.id)).where(WorldEvent.status == "active"))  # pylint: disable=not-callable
     ).scalar() or 0
 
     return WorldStatsResponse(

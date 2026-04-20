@@ -59,13 +59,13 @@ async def cmd_admin(message: Message) -> None:
 
     async with async_session_factory() as db:
         # Count agents
-        agent_count = await db.scalar(select(func.count()).select_from(Agent))
+        agent_count = await db.scalar(select(func.count()).select_from(Agent))  # pylint: disable=not-callable
         alive_count = await db.scalar(
-            select(func.count()).select_from(Agent).where(Agent.is_alive.is_(True))
+            select(func.count()).select_from(Agent).where(Agent.is_alive.is_(True))  # pylint: disable=not-callable
         )
         # Count pending votes
         pending_votes = await db.scalar(
-            select(func.count()).select_from(WorldVote).where(WorldVote.status == "pending")
+            select(func.count()).select_from(WorldVote).where(WorldVote.status == "pending")  # pylint: disable=not-callable
         )
 
     text = (
@@ -400,11 +400,11 @@ async def cmd_worlds_stats(message: Message) -> None:
         result = await db.execute(
             select(
                 Agent.realm,
-                func.count().label("count"),
+                func.count().label("count"),  # pylint: disable=not-callable
             )
             .where(Agent.is_alive.is_(True))
             .group_by(Agent.realm)
-            .order_by(func.count().desc())
+            .order_by(func.count().desc())  # pylint: disable=not-callable
         )
         rows = result.all()
 
