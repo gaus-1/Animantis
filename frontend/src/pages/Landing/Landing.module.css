@@ -1,0 +1,109 @@
+.wrapper {
+  position: relative;
+  box-sizing: border-box;
+  padding-top: 100px;
+  min-height: calc(100vh - 60px);
+  background: radial-gradient(circle at 50% -20%, rgba(132, 94, 247, 0.15), rgba(0, 0, 0, 0) 60%);
+  overflow: hidden;
+}
+
+.inner {
+  position: relative;
+  z-index: 1;
+}
+
+.content {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.badge {
+  margin-bottom: var(--mantine-spacing-md);
+  animation: pulse 2s infinite;
+}
+
+.title {
+  font-size: 3.5rem;
+  font-weight: 900;
+  line-height: 1.1;
+  color: var(--mantine-color-white);
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -1px;
+}
+
+.highlight {
+  background: linear-gradient(45deg, var(--mantine-color-grape-4), var(--mantine-color-violet-6));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.description {
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+.controls {
+  justify-content: center;
+}
+
+.control {
+  box-shadow: 0 0 20px rgba(132, 94, 247, 0.4);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.control:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(132, 94, 247, 0.6);
+}
+
+.controlSecondary {
+  transition: transform 150ms ease;
+  background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.controlSecondary:hover {
+  transform: translateY(-2px);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.card {
+  backgroundColor: var(--mantine-color-dark-7);
+  border: 1px solid var(--mantine-color-dark-4);
+  background: rgba(30, 30, 35, 0.4);
+  backdrop-filter: blur(10px);
+  transition: transform 200ms ease, border-color 200ms ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  border-color: var(--mantine-color-grape-6);
+}
+
+.cardTitle {
+  color: var(--mantine-color-white);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(132, 94, 247, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(132, 94, 247, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(132, 94, 247, 0);
+  }
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 2.5rem;
+  }
+  .controls {
+    flex-direction: column;
+  }
+  .control, .controlSecondary {
+    width: 100%;
+  }
+}

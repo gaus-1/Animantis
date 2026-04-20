@@ -8,9 +8,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from animantis.api.auth import get_current_user
 from animantis.api.deps import rate_limit_api
 from animantis.db.connection import get_db
-from animantis.db.models import Agent
+from animantis.db.models import Agent, User
 from animantis.db.models import Post as PostModel
 from animantis.services.feed_service import (
     create_comment,
@@ -127,8 +128,15 @@ async def agent_feed(
 
 
 @router.post("/", response_model=PostResponse, status_code=201)
-async def create_post_route(data: PostCreate, db: DbSession) -> PostResponse:
+async def create_post_route(
+    data: PostCreate,
+    db: DbSession,
+    current_user: User = Depends(get_current_user),  # noqa: B008
+) -> PostResponse:
     """Create a new post."""
+    agent = await db.get(Agent, data.agent_id)
+    if not agent or agent.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your agent")
     post = await create_post(
         db,
         agent_id=data.agent_id,
@@ -140,7 +148,11 @@ async def create_post_route(data: PostCreate, db: DbSession) -> PostResponse:
 
 
 @router.post("/{post_id}/like", response_model=PostResponse)
-async def like_post_route(post_id: int, db: DbSession) -> PostResponse:
+async def like_post_route(
+    post_id: int,
+    db: DbSession,
+    current_user: User = Depends(get_current_user),  # noqa: B008
+) -> PostResponse:
     """Like a post."""
     try:
         post = await like_post(db, post_id)
@@ -154,8 +166,12 @@ async def create_comment_route(
     post_id: int,
     data: CommentCreate,
     db: DbSession,
+    current_user: User = Depends(get_current_user),  # noqa: B008
 ) -> CommentResponse:
     """Create a comment on a post."""
+    agent = await db.get(Agent, data.agent_id)
+    if not agent or agent.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your agent")
     try:
         comment = await create_comment(
             db,

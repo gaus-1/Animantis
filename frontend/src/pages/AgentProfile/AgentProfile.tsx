@@ -21,7 +21,6 @@ import {
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { useAuth } from '@/context/AuthContext';
 import { useAgent, useAgentActions, useKillAgent } from '@/hooks/useApi';
 import { MoodBadge } from '@/components/MoodBadge/MoodBadge';
 import { EnergyBar } from '@/components/EnergyBar/EnergyBar';
@@ -53,7 +52,7 @@ function timeAgo(iso: string): string {
 export function AgentProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { userId } = useAuth();
+  // const { userId } = useAuth(); // Not needed anymore since API handles auth
   const { data: agent, isLoading } = useAgent(id);
   const { data: actions = [], isLoading: actionsLoading } = useAgentActions(id);
   const killAgent = useKillAgent();
@@ -94,7 +93,7 @@ export function AgentProfile() {
   async function handleKill() {
     if (!agent) return;
     try {
-      await killAgent.mutateAsync({ agentId: agent.id, userId });
+      await killAgent.mutateAsync({ agentId: agent.id });
       navigate('/');
     } catch {
       // Error will be shown via mutation state

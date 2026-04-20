@@ -16,7 +16,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, Link } from 'react-router-dom';
 
-import { useAuth } from '@/context/AuthContext';
 import { useAgent, useChatMutation } from '@/hooks/useApi';
 import { MoodBadge } from '@/components/MoodBadge/MoodBadge';
 
@@ -29,9 +28,8 @@ interface Message {
 
 export function Chat() {
   const { id } = useParams<{ id: string }>();
-  const { userId } = useAuth();
   const { data: agent, isLoading: agentLoading } = useAgent(id);
-  const chatMutation = useChatMutation(id, userId);
+  const chatMutation = useChatMutation(id);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [currentMood, setCurrentMood] = useState('neutral');

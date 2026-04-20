@@ -50,7 +50,7 @@ export function useAgent(id: string | undefined) {
 export function useCreateAgent() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: AgentCreate & { user_id: number }) =>
+    mutationFn: (data: AgentCreate & { avatar_type?: string }) =>
       api.post<Agent>('/api/v1/agents/', data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['agents'] });
@@ -61,8 +61,8 @@ export function useCreateAgent() {
 export function useKillAgent() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ agentId, userId }: { agentId: number; userId: number }) =>
-      api.del<Agent>(`/api/v1/agents/${agentId}?user_id=${userId}`),
+    mutationFn: ({ agentId }: { agentId: number }) =>
+      api.del<Agent>(`/api/v1/agents/${agentId}`),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['agents'] });
     },
@@ -178,12 +178,10 @@ export function useClans() {
 
 export function useChatMutation(
   agentId: string | undefined,
-  userId: number,
 ) {
   return useMutation({
     mutationFn: (message: string) =>
       api.post<ChatResponse>(`/api/v1/chat/${agentId}`, {
-        user_id: userId,
         message,
       }),
   });

@@ -56,7 +56,7 @@ function getPageTitle(pathname: string): string {
 export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { userId } = useAuth();
+  const { userId, isAuthenticated } = useAuth();
   const { connected: wsConnected } = useWebSocket(userId);
   const title = getPageTitle(location.pathname);
   const [sidebarOpened, { toggle: toggleSidebar, close: closeSidebar }] = useDisclosure(false);
@@ -104,21 +104,23 @@ export function Layout() {
               {title}
             </Text>
           </Group>
-          <Group gap="xs">
-            <UnstyledButton
-              className={s.headerBtn}
-              title="Уведомления"
-            >
-              🔔
-            </UnstyledButton>
-            <UnstyledButton
-              className={s.headerBtn}
-              title="Настройки"
-              onClick={() => handleNavClick('/settings')}
-            >
-              ⚙️
-            </UnstyledButton>
-          </Group>
+          {isAuthenticated && (
+            <Group gap="xs">
+              <UnstyledButton
+                className={s.headerBtn}
+                title="Уведомления"
+              >
+                🔔
+              </UnstyledButton>
+              <UnstyledButton
+                className={s.headerBtn}
+                title="Настройки"
+                onClick={() => handleNavClick('/settings')}
+              >
+                ⚙️
+              </UnstyledButton>
+            </Group>
+          )}
         </Group>
       </AppShell.Header>
 
@@ -134,11 +136,13 @@ export function Layout() {
         </div>
 
         <nav className={s.nav}>
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
+          {NAV_ITEMS.map((item) => {
+            if (!isAuthenticated && ['/', '/create'].includes(item.path)) return null;
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) =>
                 `${s.navItem} ${isActive ? s.navItemActive : ''}`
               }
               end={item.path === '/'}
@@ -147,7 +151,8 @@ export function Layout() {
               <span className={s.navIcon}>{item.icon}</span>
               {item.label}
             </NavLink>
-          ))}
+            );
+          })}
         </nav>
 
         <div className={s.navbarFooter}>
@@ -165,6 +170,7 @@ export function Layout() {
       {isMobile && (
         <div className={s.bottomNav}>
           {NAV_ITEMS.map((item) => {
+            if (!isAuthenticated && ['/', '/create'].includes(item.path)) return null;
             const isActive = item.path === '/'
               ? location.pathname === '/'
               : location.pathname.startsWith(item.path);

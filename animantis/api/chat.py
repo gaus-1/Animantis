@@ -7,9 +7,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from animantis.api.auth import get_current_user
 from animantis.api.deps import rate_limit_chat
 from animantis.db.connection import get_db
-from animantis.db.models import Agent
+from animantis.db.models import Agent, User
 from animantis.llm.prompts import build_chat_prompt
 from animantis.llm.router import LLMError, generate_chat
 from animantis.services.agent_service import AgentNotFoundError, get_agent
@@ -32,7 +33,6 @@ DbSession = Annotated[AsyncSession, Depends(get_db)]
 class ChatRequest(BaseModel):
     """Chat message from user to agent."""
 
-    user_id: int
     message: str = Field(min_length=1, max_length=1000)
 
 
@@ -55,6 +55,7 @@ async def chat_with_agent(
     agent_id: int,
     data: ChatRequest,
     db: DbSession,
+    current_user: User = Depends(get_current_user),  # noqa: B008
 ) -> ChatResponse:
     """Chat with an agent using YandexGPT Pro.
 
@@ -67,7 +68,7 @@ async def chat_with_agent(
         raise HTTPException(status_code=404, detail=str(e)) from e
 
     # Check ownership
-    if agent.user_id != data.user_id:
+    if agent.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Only the owner can chat with this agent")
 
     # Check alive

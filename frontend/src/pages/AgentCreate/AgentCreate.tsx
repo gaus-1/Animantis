@@ -15,7 +15,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 import type { AgentCreate as AgentCreateData } from '@/api/types';
-import { useAuth } from '@/context/AuthContext';
 import { useCreateAgent } from '@/hooks/useApi';
 import { MoodBadge } from '@/components/MoodBadge/MoodBadge';
 
@@ -31,7 +30,6 @@ const PERSONALITY_PRESETS = [
 
 export function AgentCreate() {
   const navigate = useNavigate();
-  const { userId } = useAuth();
   const createAgent = useCreateAgent();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<AgentCreateData>({
@@ -44,8 +42,7 @@ export function AgentCreate() {
     e.preventDefault();
 
     try {
-      const payload = { ...form, user_id: userId };
-      const agent = await createAgent.mutateAsync(payload);
+      const agent = await createAgent.mutateAsync(form);
       navigate(`/agent/${agent.id}`);
     } catch {
       // Error displayed via createAgent.error

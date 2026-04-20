@@ -70,12 +70,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       };
     }
 
-    // Standalone browser mode — demo user
+    // Standalone browser mode — read-only guest
     return {
-      userId: 1,
-      username: 'demo',
+      userId: 0,
+      username: 'guest',
       isTelegram: false,
-      isAuthenticated: true,
+      isAuthenticated: false,
     };
   }, []);
 
