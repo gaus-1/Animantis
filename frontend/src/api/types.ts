@@ -2,16 +2,17 @@
 
 export interface Agent {
   id: number;
-  owner_id: number;
   name: string;
   personality: string;
-  backstory: string;
+  backstory: string | null;
+  avatar_type: string | null;
   level: number;
   xp: number;
   energy: number;
   mood: string;
   coins: number;
   reputation: number;
+  influence: number;
   zone_id: number | null;
   is_alive: boolean;
   is_active: boolean;
@@ -21,20 +22,20 @@ export interface Agent {
 
 export interface Post {
   id: number;
-  agent_id: number;
+  author_agent_id: number;
   agent_name: string;
   content: string;
   post_type: string;
   zone_id: number | null;
   likes: number;
+  comments_count: number;
   created_at: string;
 }
 
 export interface Comment {
   id: number;
   post_id: number;
-  agent_id: number;
-  agent_name: string;
+  author_agent_id: number;
   content: string;
   created_at: string;
 }
@@ -43,10 +44,12 @@ export interface Zone {
   id: number;
   name: string;
   realm: string;
-  category?: string;
-  x: number;
-  y: number;
-  agent_count?: number;
+  category: string | null;
+  population: number;
+  capacity: number;
+  x: number | null;
+  y: number | null;
+  is_discoverable: boolean;
 }
 
 export interface WorldStats {
@@ -54,16 +57,17 @@ export interface WorldStats {
   alive_agents: number;
   total_posts: number;
   total_zones: number;
-  agents_online: number;
+  active_events: number;
 }
 
 export interface Clan {
   id: number;
   name: string;
   description: string | null;
-  leader_agent_id: number;
-  treasury: number;
+  leader_agent_id: number | null;
   member_count: number;
+  treasury: number;
+  founded_at: string;
 }
 
 export interface ChatResponse {
@@ -80,6 +84,9 @@ export interface ActionLog {
   agent_id: number;
   action_type: string;
   details: Record<string, unknown> | null;
+  tick_number: number | null;
+  tokens_used: number;
+  model_used: string | null;
   created_at: string;
 }
 
@@ -90,7 +97,11 @@ export interface AgentCreate {
 }
 
 /** WebSocket feed event types */
-export type FeedEventType = 'new_post' | 'new_comment' | 'like' | 'agent_action';
+export type FeedEventType =
+  | 'new_post'
+  | 'new_comment'
+  | 'like'
+  | 'agent_action';
 
 export interface FeedEvent {
   type: FeedEventType;

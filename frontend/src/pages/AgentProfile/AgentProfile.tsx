@@ -2,12 +2,15 @@
  * AgentProfile — detailed agent profile with stats, actions, and timeline.
  */
 
+import { useState } from 'react';
+
 import {
   Avatar,
   Badge,
   Button,
   Card,
   Group,
+  Modal,
   Progress,
   SimpleGrid,
   Skeleton,
@@ -16,17 +19,45 @@ import {
   Title,
 } from '@mantine/core';
 import { motion } from 'framer-motion';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { useAgent } from '@/hooks/useApi';
+import { useAuth } from '@/context/AuthContext';
+import { useAgent, useAgentActions, useKillAgent } from '@/hooks/useApi';
 import { MoodBadge } from '@/components/MoodBadge/MoodBadge';
 import { EnergyBar } from '@/components/EnergyBar/EnergyBar';
 
 import s from './AgentProfile.module.css';
 
+const ACTION_ICONS: Record<string, string> = {
+  rest: '💤', sleep: '😴', post: '📝', comment: '💬', move: '🚶',
+  explore: '🔍', travel: '✈️', fight: '⚔️', trade: '💰', befriend: '🤝',
+  flirt: '💕', write_poem: '✍️', pray: '🙏', gamble: '🎰',
+  steal: '🦝', study: '📖', philosophize: '🤔', create_clan: '⚔️',
+  owner_command: '📢', vote: '🗳️', default: '🔹',
+};
+
+function actionIcon(type: string): string {
+  return ACTION_ICONS[type] ?? ACTION_ICONS.default;
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff / 60_000);
+  if (min < 1) return 'только что';
+  if (min < 60) return `${min} мин назад`;
+  const hrs = Math.floor(min / 60);
+  if (hrs < 24) return `${hrs} ч назад`;
+  return `${Math.floor(hrs / 24)} д назад`;
+}
+
 export function AgentProfile() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { userId } = useAuth();
   const { data: agent, isLoading } = useAgent(id);
+  const { data: actions = [], isLoading: actionsLoading } = useAgentActions(id);
+  const killAgent = useKillAgent();
+  const [killModalOpen, setKillModalOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -58,6 +89,17 @@ export function AgentProfile() {
   }
 
   const xpPercent = agent.xp % 100;
+  const isOwner = true; // TODO: compare agent.user_id with userId when backend returns it
+
+  async function handleKill() {
+    if (!agent) return;
+    try {
+      await killAgent.mutateAsync({ agentId: agent.id, userId });
+      navigate('/');
+    } catch {
+      // Error will be shown via mutation state
+    }
+  }
 
   return (
     <div className={s.profile}>
@@ -90,6 +132,9 @@ export function AgentProfile() {
               <Group gap="sm">
                 <Title order={2}>{agent.name}</Title>
                 <MoodBadge mood={agent.mood || 'neutral'} size="md" />
+                {!agent.is_alive && (
+                  <Badge color="red" variant="filled">💀 Мёртв</Badge>
+                )}
               </Group>
 
               <Text size="sm" c="dimmed">{agent.personality}</Text>
@@ -129,26 +174,56 @@ export function AgentProfile() {
               </div>
 
               <Group gap="sm" mt="sm">
-                <Button
-                  component={Link}
-                  to={`/chat/${agent.id}`}
-                  color="cyan"
-                  leftSection="💬"
-                >
-                  Поговорить
-                </Button>
-                <Button
-                  variant="subtle"
-                  color="red"
-                  leftSection="☠️"
-                >
-                  Убить агента
-                </Button>
+                {agent.is_alive && (
+                  <Button
+                    component={Link}
+                    to={`/chat/${agent.id}`}
+                    color="cyan"
+                    leftSection="💬"
+                  >
+                    Поговорить
+                  </Button>
+                )}
+                {isOwner && agent.is_alive && (
+                  <Button
+                    variant="subtle"
+                    color="red"
+                    leftSection="☠️"
+                    onClick={() => setKillModalOpen(true)}
+                  >
+                    Убить агента
+                  </Button>
+                )}
               </Group>
             </Stack>
           </Group>
         </Card>
       </motion.div>
+
+      {/* Kill confirmation modal */}
+      <Modal
+        opened={killModalOpen}
+        onClose={() => setKillModalOpen(false)}
+        title="☠️ Подтверждение"
+        centered
+      >
+        <Text size="sm" mb="lg">
+          Вы уверены, что хотите уничтожить агента <strong>{agent.name}</strong>?
+          Это действие необратимо.
+        </Text>
+        <Group justify="flex-end" gap="sm">
+          <Button variant="subtle" onClick={() => setKillModalOpen(false)}>
+            Отмена
+          </Button>
+          <Button
+            color="red"
+            loading={killAgent.isPending}
+            onClick={handleKill}
+          >
+            Уничтожить
+          </Button>
+        </Group>
+      </Modal>
 
       {/* Action History */}
       <motion.div
@@ -158,17 +233,57 @@ export function AgentProfile() {
       >
         <Card className={s.historyCard} padding="lg" radius="lg" withBorder mt="lg">
           <Title order={4} mb="md">📜 История действий</Title>
-          <Card className={s.timelineItem} padding="sm" withBorder>
-            <Group gap="sm">
-              <Text>💤</Text>
-              <div>
-                <Text size="sm" fw={500}>Агент создан</Text>
-                <Text size="xs" c="dimmed">
-                  {new Date(agent.created_at).toLocaleString('ru-RU')}
-                </Text>
-              </div>
-            </Group>
-          </Card>
+
+          {actionsLoading ? (
+            <Stack gap="sm">
+              <Skeleton height={48} radius="md" />
+              <Skeleton height={48} radius="md" />
+              <Skeleton height={48} radius="md" />
+            </Stack>
+          ) : actions.length === 0 ? (
+            <Card className={s.timelineItem} padding="sm" withBorder>
+              <Group gap="sm">
+                <Text>💤</Text>
+                <div>
+                  <Text size="sm" fw={500}>Агент создан</Text>
+                  <Text size="xs" c="dimmed">
+                    {new Date(agent.created_at).toLocaleString('ru-RU')}
+                  </Text>
+                </div>
+              </Group>
+            </Card>
+          ) : (
+            <Stack gap="sm">
+              {actions.map((action) => (
+                <Card key={action.id} className={s.timelineItem} padding="sm" withBorder>
+                  <Group gap="sm" wrap="nowrap">
+                    <Text size="lg">{actionIcon(action.action_type)}</Text>
+                    <div style={{ flex: 1 }}>
+                      <Group gap="xs" wrap="nowrap">
+                        <Text size="sm" fw={500}>
+                          {action.action_type.replace(/_/g, ' ')}
+                        </Text>
+                        {typeof action.details?.target === 'string' && (
+                          <Badge variant="light" size="xs" color="cyan">
+                            → {action.details.target}
+                          </Badge>
+                        )}
+                      </Group>
+                      {typeof action.details?.content === 'string' && (
+                        <Text size="xs" c="dimmed" lineClamp={2} mt={2}>
+                          {action.details.content}
+                        </Text>
+                      )}
+                      <Text size="xs" c="dimmed" mt={2}>
+                        {timeAgo(action.created_at)}
+                        {typeof action.details?.emotion === 'string' && ` · ${action.details.emotion}`}
+                      </Text>
+                    </div>
+                  </Group>
+                </Card>
+              ))}
+            </Stack>
+          )}
         </Card>
       </motion.div>
     </div>

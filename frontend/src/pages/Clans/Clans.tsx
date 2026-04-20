@@ -1,7 +1,3 @@
-/**
- * Clans — clan directory page.
- */
-
 import {
   Badge,
   Card,
@@ -13,18 +9,13 @@ import {
   Title,
 } from '@mantine/core';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
 
-import { api } from '@/api/client';
-import type { Clan } from '@/api/types';
+import { useClans } from '@/hooks/useApi';
 
 import s from './Clans.module.css';
 
 export function Clans() {
-  const { data: clans, isLoading } = useQuery<Clan[]>({
-    queryKey: ['clans'],
-    queryFn: () => api.get<Clan[]>('/api/v1/clans/'),
-  });
+  const { data: clans, isLoading } = useClans();
 
   return (
     <div className={s.clansPage}>

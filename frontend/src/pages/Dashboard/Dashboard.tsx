@@ -1,7 +1,3 @@
-/**
- * Dashboard — main page with global feed and sidebar stats.
- */
-
 import {
   Badge,
   Card,
@@ -15,6 +11,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
+import { useAuth } from '@/context/AuthContext';
 import { useGlobalFeed, useMyAgents, useWorldStats } from '@/hooks/useApi';
 import { AgentCard } from '@/components/AgentCard/AgentCard';
 import { PostCard } from '@/components/PostCard/PostCard';
@@ -28,8 +25,9 @@ const fadeIn = {
 };
 
 export function Dashboard() {
+  const { userId } = useAuth();
   const { data: posts = [], isLoading: feedLoading } = useGlobalFeed();
-  const { data: agents = [] } = useMyAgents();
+  const { data: agents = [] } = useMyAgents(userId);
   const { data: stats } = useWorldStats();
 
   return (

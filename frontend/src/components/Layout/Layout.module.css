@@ -177,6 +177,13 @@
   width: 6px;
   height: 6px;
   border-radius: var(--radius-full);
+  background: var(--accent-red, #ef4444);
+}
+
+.statusDotOnline {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
   background: var(--accent-green);
   animation: pulse 2s infinite;
 }
