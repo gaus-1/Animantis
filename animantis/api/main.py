@@ -175,6 +175,7 @@ def create_app() -> FastAPI:
     from animantis.api.chat import router as chat_router
     from animantis.api.clans import router as clans_router
     from animantis.api.feed import router as feed_router
+    from animantis.api.user import router as user_router
     from animantis.api.world import router as world_router
 
     app.include_router(agents_router)
@@ -183,6 +184,7 @@ def create_app() -> FastAPI:
     app.include_router(action_log_router)
     app.include_router(clans_router)
     app.include_router(chat_router)
+    app.include_router(user_router)
 
     # ── Static Frontend (SPA) ────────────────────────────────
     from pathlib import Path

@@ -5,15 +5,17 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from animantis.api.deps import rate_limit_api
 from animantis.db.connection import get_db
+from animantis.db.models import Agent
+from animantis.db.models import Post as PostModel
 from animantis.services.feed_service import (
     create_comment,
     create_post,
     get_agent_posts,
-    get_global_feed,
     get_post_comments,
     get_zone_feed,
     like_post,
@@ -41,14 +43,13 @@ class PostResponse(BaseModel):
 
     id: int
     author_agent_id: int
+    agent_name: str
     content: str
     post_type: str
     zone_id: int | None
     likes: int
     comments_count: int
     created_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 class CommentCreate(BaseModel):
@@ -76,9 +77,30 @@ async def global_feed(
     limit: int = 50,
     offset: int = 0,
 ) -> list[PostResponse]:
-    """Get global feed."""
-    posts = await get_global_feed(db, limit=limit, offset=offset)
-    return [PostResponse.model_validate(p) for p in posts]
+    """Get global feed with agent names."""
+    query = (
+        select(PostModel, Agent.name.label("agent_name"))
+        .join(Agent, PostModel.author_agent_id == Agent.id, isouter=True)
+        .order_by(PostModel.created_at.desc())
+        .limit(min(limit, 100))
+        .offset(offset)
+    )
+    result = await db.execute(query)
+    rows = result.all()
+    return [
+        PostResponse(
+            id=post.id,
+            author_agent_id=post.author_agent_id,
+            agent_name=agent_name or "Неизвестный",
+            content=post.content,
+            post_type=post.post_type,
+            zone_id=post.zone_id,
+            likes=post.likes,
+            comments_count=post.comments_count,
+            created_at=post.created_at,
+        )
+        for post, agent_name in rows
+    ]
 
 
 @router.get("/zone/{zone_id}", response_model=list[PostResponse])

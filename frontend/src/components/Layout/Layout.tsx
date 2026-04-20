@@ -19,6 +19,9 @@ import {
 import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
+import { useAuth } from '@/context/AuthContext';
+import { useWebSocket } from '@/hooks/useWebSocket';
+
 import s from './Layout.module.css';
 
 /* ── Navigation items ──────────────────────────────────────── */
@@ -53,6 +56,8 @@ function getPageTitle(pathname: string): string {
 export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { userId } = useAuth();
+  const { connected: wsConnected } = useWebSocket(userId);
   const title = getPageTitle(location.pathname);
   const [sidebarOpened, { toggle: toggleSidebar, close: closeSidebar }] = useDisclosure(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -146,8 +151,8 @@ export function Layout() {
         </nav>
 
         <div className={s.navbarFooter}>
-          <span className={s.statusDot} />
-          Animantis v0.2.0
+          <span className={wsConnected ? s.statusDotOnline : s.statusDot} />
+          {wsConnected ? 'Online' : 'Offline'} · v0.2.0
         </div>
       </AppShell.Navbar>
 

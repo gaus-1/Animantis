@@ -342,7 +342,7 @@ export function WorldMap() {
                   <Card key={zone.id} padding="xs" radius="md" withBorder className={s.drawerCard}>
                     <Group justify="space-between">
                       <Text size="sm" fw={500}>{zone.name}</Text>
-                      <Badge variant="light" size="xs">👥 {zone.agent_count ?? 0}</Badge>
+                      <Badge variant="light" size="xs">👥 {zone.population}</Badge>
                     </Group>
                   </Card>
                 ))}

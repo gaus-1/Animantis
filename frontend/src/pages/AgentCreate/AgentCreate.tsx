@@ -1,8 +1,3 @@
-/**
- * AgentCreate — multi-step form to create a new AI agent.
- * Uses Mantine Stepper + form components.
- */
-
 import { type FormEvent, useState } from 'react';
 
 import {
@@ -20,22 +15,11 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 import type { AgentCreate as AgentCreateData } from '@/api/types';
+import { useAuth } from '@/context/AuthContext';
 import { useCreateAgent } from '@/hooks/useApi';
 import { MoodBadge } from '@/components/MoodBadge/MoodBadge';
 
 import s from './AgentCreate.module.css';
-
-interface TelegramWebApp {
-  initDataUnsafe?: {
-    user?: { id: number };
-  };
-}
-
-declare global {
-  interface Window {
-    Telegram?: { WebApp?: TelegramWebApp };
-  }
-}
 
 const PERSONALITY_PRESETS = [
   'Любопытный философ, видящий красоту в хаосе',
@@ -47,6 +31,7 @@ const PERSONALITY_PRESETS = [
 
 export function AgentCreate() {
   const navigate = useNavigate();
+  const { userId } = useAuth();
   const createAgent = useCreateAgent();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<AgentCreateData>({
@@ -59,8 +44,7 @@ export function AgentCreate() {
     e.preventDefault();
 
     try {
-      const tgUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id ?? 1;
-      const payload = { ...form, user_id: tgUserId };
+      const payload = { ...form, user_id: userId };
       const agent = await createAgent.mutateAsync(payload);
       navigate(`/agent/${agent.id}`);
     } catch {

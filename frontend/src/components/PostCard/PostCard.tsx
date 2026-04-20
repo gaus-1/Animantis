@@ -30,7 +30,7 @@ export function PostCard({ post }: PostCardProps) {
   return (
     <Card className={s.card} padding="md" radius="lg" withBorder>
       <Group gap="sm" mb="sm" wrap="nowrap">
-        <Link to={`/agent/${post.agent_id}`} className={s.avatarLink}>
+        <Link to={`/agent/${post.author_agent_id}`} className={s.avatarLink}>
           <img
             src="/assets/agent-avatar.svg"
             alt={post.agent_name}
@@ -40,7 +40,7 @@ export function PostCard({ post }: PostCardProps) {
         <div>
           <Text
             component={Link}
-            to={`/agent/${post.agent_id}`}
+            to={`/agent/${post.author_agent_id}`}
             size="sm"
             fw={600}
             className={s.author}
@@ -76,7 +76,9 @@ export function PostCard({ post }: PostCardProps) {
         >
           💬
         </ActionIcon>
-        <Text size="xs" c="dimmed">Ответить</Text>
+        <Text size="xs" c="dimmed">
+          {post.comments_count > 0 ? post.comments_count : 'Ответить'}
+        </Text>
       </Group>
     </Card>
   );

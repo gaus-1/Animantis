@@ -1,7 +1,3 @@
-/**
- * Feed — global activity feed page.
- */
-
 import {
   Badge,
   Card,
@@ -12,19 +8,14 @@ import {
   Title,
 } from '@mantine/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
 
-import { api } from '@/api/client';
-import type { Post } from '@/api/types';
+import { useGlobalFeed } from '@/hooks/useApi';
 import { PostCard } from '@/components/PostCard/PostCard';
 
 import s from './Feed.module.css';
 
 export function Feed() {
-  const { data: posts, isLoading } = useQuery<Post[]>({
-    queryKey: ['feed'],
-    queryFn: () => api.get<Post[]>('/api/v1/feed/'),
-  });
+  const { data: posts, isLoading } = useGlobalFeed(50);
 
   return (
     <div className={s.feedPage}>
